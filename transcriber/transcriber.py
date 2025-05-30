@@ -344,9 +344,9 @@ class Transcriber(commands.Cog):
                     description=f"A voice note from {message.author.mention} in {message.channel.mention} has been moderated.",
                     color=0xff4545
                 )
-                # Show the top 3 scoring categories as unique embed fields, as percent
+                # Show the top 6 scoring categories as unique embed fields, as percent
                 if flags:
-                    top_flags = flags[:3]
+                    top_flags = flags[:6]
                     for flag, score in top_flags:
                         # Prettify flag name
                         pretty_flag = flag.replace("_", " ").capitalize()
