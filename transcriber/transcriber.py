@@ -367,10 +367,10 @@ class Transcriber(commands.Cog):
                         )
                 temp_file_path = None  # Initialize temp_file_path
                 try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as temp_file:
                         temp_file.write(voice_note)
                         temp_file_path = temp_file.name
-                    await logging_channel.send(embed=embed, file=discord.File(temp_file_path, filename="moderated_voice_note.mp3"))
+                    await logging_channel.send(embed=embed, file=discord.File(temp_file_path, filename="voice-message.ogg"))
                 except Exception as e:  # Catch all exceptions
                     await logging_channel.send(f"Failed to send moderated voice note: {str(e)}")
                 finally:
