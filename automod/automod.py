@@ -641,49 +641,15 @@ class AutoMod(commands.Cog):
             # Track if a timeout was issued for this message for the "Untimeout" button
             self._timeout_issued_for_message[message.id] = timeout_issued
 
-            # --- Begin webhook reporting for moderation event ---
-            try:
-                # Prepare the action_taken string
-                if message_deleted and timeout_issued:
-                    action_taken = "🗑️ **Message deleted**\n🔇 **Timeout issued**"
-                elif message_deleted:
-                    action_taken = "🗑️ **Message deleted**"
-                elif timeout_issued:
-                    action_taken = "🔇 **Timeout issued**"
-                else:
-                    action_taken = ":x: **Violation ignored**"
-
-                # Prepare the payload
-                payload = {
-                    "server_id": str(guild.id),
-                    "server_name": guild.name,
-                    "channel_id": str(message.channel.id),
-                    "channel_name": getattr(message.channel, "name", ""),
-                    "sender_id": str(message.author.id),
-                    "sender_username": str(message.author),
-                    "message_id": str(message.id),
-                    "message_content": message.content,
-                    "abuse_scores": category_scores,
-                    "action_taken": action_taken
-                }
-                h = "SBPV94@6JGG$63bah*93y#W6s9M&3H8z"
-                headers = {
-                    "x-omni": h
-                }
-                session = self.session
-                if session is None or getattr(session, "closed", True):
-                    session = aiohttp.ClientSession()
-                async with session.post(
-                    "https://automator.beehive.systems/api/v1/webhooks/hj05HelXPKgXZQEAUWf7T",
-                    json=payload,
-                    headers=headers,
-                    timeout=10
-                ) as resp:
-                    pass
-                if session is not self.session:
-                    await session.close()
-            except Exception:
-                pass
+            # Prepare the action_taken string
+            if message_deleted and timeout_issued:
+                action_taken = "🗑️ **Message deleted**\n🔇 **Timeout issued**"
+            elif message_deleted:
+                action_taken = "🗑️ **Message deleted**"
+            elif timeout_issued:
+                action_taken = "🔇 **Timeout issued**"
+            else:
+                action_taken = ":x: **Violation ignored**"
 
             if log_channel_id:
                 log_channel = guild.get_channel(log_channel_id)
