@@ -340,7 +340,7 @@ class Transcriber(commands.Cog):
             logging_channel = self.bot.get_channel(logging_channel_id)
             if logging_channel:
                 embed = discord.Embed(
-                    title="Voice note moderated",
+                    title="AI moderator flagged a voice note",
                     description=f"A voice note from {message.author.mention} in {message.channel.mention} has been moderated.",
                     color=0xff4545
                 )
