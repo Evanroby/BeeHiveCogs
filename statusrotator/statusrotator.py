@@ -25,7 +25,7 @@ class StatusRotator(commands.Cog):
             self.get_latency_status
         ]
         if self.bot.user.id == 1152805502116429929:
-            self.statuses.append(lambda: "beehive.systems/sentri")
+            self.statuses.append(lambda: "beehivesafety.com/sentri")
         self.message_log = deque()
         self.hyperlink_log = deque()  # Log for hyperlinks
         self.bot.loop.create_task(self.load_settings())
@@ -50,8 +50,8 @@ class StatusRotator(commands.Cog):
                 await asyncio.sleep(300)  # Change status every 300 seconds
 
     async def fetch_blocked_domains_count(self):
-        url = "https://www.beehive.systems/hubfs/blocklist/blocklist.json"
-        headers = {"User-Agent": "statusrotator (github.com/beehivecybersecurity/beehive-cogs)"}
+        url = "https://beehivesafety.com/hubfs/blocklist/blocklist.json"
+        headers = {"User-Agent": "statusrotator (github.com/beehivesafety/beehive-cogs)"}
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, headers=headers) as response:
