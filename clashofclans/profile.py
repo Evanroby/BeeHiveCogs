@@ -158,16 +158,16 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
         embed = discord.Embed(
             title=f"{player.get('name', 'Unknown')}",
-            description=f"-# {player.get('tag', tag)}{role_label}\n",
+            description=f"{role_label}\n-# {player.get('tag', tag)}",
             color=embed_color
         )
-        embed.add_field(name="Town Hall", value=player.get("townHallLevel", "N/A"))
+        embed.add_field(name="Town hall", value=player.get("townHallLevel", "N/A"))
         embed.add_field(name="Experience level", value=player.get("expLevel", "N/A"))
         embed.add_field(name="Current trophies", value=player.get("trophies", "N/A"))
         embed.add_field(name="Trophy record", value=player.get("bestTrophies", "N/A"))
-        embed.add_field(name="War Stars", value=player.get("warStars", "N/A"))
-        embed.add_field(name="Attack Wins", value=player.get("attackWins", "N/A"))
-        embed.add_field(name="Defense Wins", value=player.get("defenseWins", "N/A"))
+        embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"))
+        embed.add_field(name="Attacks won", value=player.get("attackWins", "N/A"))
+        embed.add_field(name="Successful defenses", value=player.get("defenseWins", "N/A"))
         embed.add_field(name="Troops donated", value=player.get("donations", "N/A"))
         embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"))
         embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"))
