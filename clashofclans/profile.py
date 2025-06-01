@@ -161,16 +161,16 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             description=f"{role_label}\n-# {player.get('tag', tag)}",
             color=embed_color
         )
-        embed.add_field(name="Town hall", value=player.get("townHallLevel", "N/A"))
-        embed.add_field(name="Experience level", value=player.get("expLevel", "N/A"))
-        embed.add_field(name="Current trophies", value=player.get("trophies", "N/A"))
-        embed.add_field(name="Trophy record", value=player.get("bestTrophies", "N/A"))
-        embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"))
-        embed.add_field(name="Attacks won", value=player.get("attackWins", "N/A"))
-        embed.add_field(name="Successful defenses", value=player.get("defenseWins", "N/A"))
-        embed.add_field(name="Troops donated", value=player.get("donations", "N/A"))
-        embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"))
-        embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"))
+        embed.add_field(name="Town hall", value=player.get("townHallLevel", "N/A"), inline=True)
+        embed.add_field(name="Experience level", value=player.get("expLevel", "N/A"), inline=True)
+        embed.add_field(name="Current trophies", value=player.get("trophies", "N/A"), inline=True)
+        embed.add_field(name="Trophy record", value=player.get("bestTrophies", "N/A"), inline=True)
+        embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
+        embed.add_field(name="Attacks won this season", value=player.get("attackWins", "N/A"), inline=True)
+        embed.add_field(name="Successful defenses this season", value=player.get("defenseWins", "N/A"), inline=True)
+        embed.add_field(name="Troops donated", value=player.get("donations", "N/A"), inline=True)
+        embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"), inline=True)
+        embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
         # Set thumbnail to the player's division/rank badge if available, otherwise clan badge
         thumbnail_url = None
         if player.get("league"):
@@ -181,10 +181,10 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             thumbnail_url = clan.get("badgeUrls", {}).get("medium")
         if player.get("clan"):
             clan = player["clan"]
-            embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=False)
+            embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=True)
         if player.get("league"):
             league = player["league"]
-            embed.add_field(name="League", value=league.get("name", "N/A"))
+            embed.add_field(name="League", value=league.get("name", "N/A"), inline=True)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
         await ctx.send(embed=embed)
