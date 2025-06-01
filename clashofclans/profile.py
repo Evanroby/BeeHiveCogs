@@ -12,7 +12,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         super().__init__()  # Ensure proper Cog initialization
         self.bot = bot
         # Use Red's Config for persistent, per-user, global storage
-        self.config = Config.get_conf(self, identifier=0xC0C0C0C0, force_registration=True)
+        self.config = Config.get_conf(self, identifier=1234567890, force_registration=True)
         default_user = {"tag": None, "verified": False}
         self.config.register_user(**default_user)
         # Assume dev_api_key is stored in bot's config or attribute
@@ -90,7 +90,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     async def clashprofile_info(self, ctx, tag: str = None):
         """Get general information about a Clash of Clans player."""
 
-        async def get_dominant_color_from_url(url):
+        async def get_brightest_color_from_url(url):
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as resp:
@@ -104,10 +104,16 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                     pixels = [p for p in pixels if p[3] > 0]
                     if not pixels:
                         return None
-                    # Get the most common color
-                    from collections import Counter
-                    most_common = Counter(pixels).most_common(1)[0][0]
-                    return discord.Color.from_rgb(most_common[0], most_common[1], most_common[2])
+                    # Find the pixel with the highest "richness" (brightness and saturation)
+                    def color_richness(p):
+                        r, g, b, a = p
+                        # Convert to HSV to get brightness and saturation
+                        import colorsys
+                        h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
+                        # Richness: prioritize value (brightness) and saturation
+                        return v * 0.7 + s * 0.3
+                    brightest = max(pixels, key=color_richness)
+                    return discord.Color.from_rgb(brightest[0], brightest[1], brightest[2])
             except Exception:
                 return None
 
@@ -138,7 +144,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             league = player["league"]
             league_icon = league.get("iconUrls", {}).get("medium")
             if league_icon:
-                color = await get_dominant_color_from_url(league_icon)
+                color = await get_brightest_color_from_url(league_icon)
                 if color:
                     embed_color = color
 
