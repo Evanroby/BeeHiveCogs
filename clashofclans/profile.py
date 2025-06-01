@@ -172,7 +172,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         EMOJI_LEVEL = "🎖️"
         EMOJI_CLAN = "🛡️"
         EMOJI_TROPHY = "🏆"
-        EMOJI_BUILDER_TROPHY = "🔨"
         EMOJI_RECORD = "📈"
         EMOJI_BUILDER_RECORD = "🥇"
         EMOJI_ATTACK = "⚔️"
@@ -225,7 +224,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         builder_base_trophies = player.get('builderBaseTrophies')
         trophies_field = f"-# **{EMOJI_TROPHY} {trophies}**"
         if builder_base_trophies:
-            trophies_field += f"\n-# **{EMOJI_BUILDER_TROPHY} {builder_base_trophies}**"
+            trophies_field += f"\n-# **{EMOJI_BUILDERHALL} {builder_base_trophies}**"
         embed.add_field(
             name="Current trophies",
             value=trophies_field,
