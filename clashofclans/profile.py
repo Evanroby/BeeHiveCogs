@@ -1,4 +1,5 @@
 import discord
+from collections import defaultdict
 from redbot.core import commands, Config, checks
 import math
 import datetime
@@ -6,6 +7,7 @@ import aiohttp
 from io import BytesIO
 from PIL import Image
 import asyncio
+import colorsys
 
 # Move this helper to the class scope so it can be used in _build_log_embed
 async def get_brightest_color_from_url(url):
@@ -23,7 +25,6 @@ async def get_brightest_color_from_url(url):
                 return None
             def color_richness(p):
                 r, g, b, a = p
-                import colorsys
                 h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
                 return v * 0.7 + s * 0.3
             brightest = max(pixels, key=color_richness)
@@ -686,7 +687,6 @@ class ClashProfile(commands.Cog):
         )
 
         # Group troops by village for better organization
-        from collections import defaultdict
         troops_by_village = defaultdict(list)
         for troop in troops:
             village = troop.get('village', 'Unknown')
