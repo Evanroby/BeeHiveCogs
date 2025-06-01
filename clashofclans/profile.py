@@ -563,7 +563,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             else:
                 eq_str = "None"
             hero_lines.append(
-                f"**{hero_name}**\n-# Level {hero_level}/{hero_max})\n{eq_str}"
+                f"**{hero_name}**\n-# Level {hero_level}/{hero_max}\n{eq_str}"
             )
         # Discord embed field value max length is 1024, so chunk if needed
         for i in range(0, len(hero_lines), 2):
