@@ -1,6 +1,7 @@
 import discord
 from redbot.core import commands  # Use Red's commands base
 import aiohttp
+import math
 
 class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     """Clash of Clans profile commands."""
@@ -129,7 +130,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
     @clashprofile.command(name="achievements")
     async def clashprofile_achievements(self, ctx, tag: str = None):
-        """Get a list of achievements for a Clash of Clans player."""
+        """Get a paginated, scrollable list of achievements for a Clash of Clans player."""
+
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -152,20 +154,72 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("No achievements found for this player.")
             return
 
-        embed = discord.Embed(
-            title=f"Achievements for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
-            color=discord.Color.gold()
-        )
-        for ach in achievements[:20]:  # Show up to 20 achievements
-            stars = "⭐" * ach.get("stars", 0)
-            embed.add_field(
-                name=f"{ach.get('name', 'Unknown')} {stars}",
-                value=f"{ach.get('info', '')}\nProgress: {ach.get('value', 0)}/{ach.get('target', 0)}\n{ach.get('completionInfo', '') or ''}",
-                inline=False
+        PAGE_SIZE = 9
+
+        def make_embed(page: int):
+            embed = discord.Embed(
+                title=f"Achievements for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                color=discord.Color.gold()
             )
-        if len(achievements) > 20:
-            embed.set_footer(text=f"Showing first 20 of {len(achievements)} achievements.")
-        await ctx.send(embed=embed)
+            start = page * PAGE_SIZE
+            end = min(start + PAGE_SIZE, len(achievements))
+            for ach in achievements[start:end]:
+                stars = "⭐" * ach.get("stars", 0)
+                embed.add_field(
+                    name=f"{ach.get('name', 'Unknown')} {stars}",
+                    value=f"{ach.get('info', '')}\nProgress: {ach.get('value', 0)}/{ach.get('target', 0)}\n{ach.get('completionInfo', '') or ''}",
+                    inline=True
+                )
+            total_pages = math.ceil(len(achievements) / PAGE_SIZE)
+            embed.set_footer(text=f"Page {page+1}/{total_pages} • {len(achievements)} achievements total")
+            return embed
+
+        # Emoji navigation
+        LEFT_EMOJI = "⬅️"
+        CLOSE_EMOJI = "❌"
+        RIGHT_EMOJI = "➡️"
+        EMOJIS = [LEFT_EMOJI, CLOSE_EMOJI, RIGHT_EMOJI]
+
+        total_pages = math.ceil(len(achievements) / PAGE_SIZE)
+        page = 0
+        embed = make_embed(page)
+        message = await ctx.send(embed=embed)
+        for emoji in EMOJIS:
+            await message.add_reaction(emoji)
+
+        def check(reaction, user):
+            return (
+                user.id == ctx.author.id
+                and reaction.message.id == message.id
+                and str(reaction.emoji) in EMOJIS
+            )
+
+        while True:
+            try:
+                reaction, user = await ctx.bot.wait_for("reaction_add", timeout=120.0, check=check)
+            except asyncio.TimeoutError:
+                try:
+                    await message.clear_reactions()
+                except Exception:
+                    pass
+                break
+
+            if str(reaction.emoji) == LEFT_EMOJI:
+                if page > 0:
+                    page -= 1
+                    await message.edit(embed=make_embed(page))
+                await message.remove_reaction(LEFT_EMOJI, user)
+            elif str(reaction.emoji) == RIGHT_EMOJI:
+                if page < total_pages - 1:
+                    page += 1
+                    await message.edit(embed=make_embed(page))
+                await message.remove_reaction(RIGHT_EMOJI, user)
+            elif str(reaction.emoji) == CLOSE_EMOJI:
+                try:
+                    await message.delete()
+                except Exception:
+                    pass
+                break
 
     @clashprofile.command(name="troops")
     async def clashprofile_troops(self, ctx, tag: str = None):
