@@ -221,14 +221,19 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             inline=True
         )
 
-        # Clan
-        if player.get("clan"):
-            clan = player["clan"]
-            embed.add_field(
-                name="Clan",
-                value=f"-# **{EMOJI_CLAN} {clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})**",
-                inline=True
-            )
+        # Clan wars participation
+        war_pref = player.get("warPreference", "N/A")
+        if war_pref == "in":
+            war_status = "⚔️ Participating in clan wars"
+        elif war_pref == "out":
+            war_status = "🚫 Not participating in clan wars"
+        else:
+            war_status = "Clan war status unknown"
+        embed.add_field(
+            name="Clan wars",
+            value=f"-# **{war_status}**",
+            inline=True
+        )
 
         # Current trophies (main village) & Builder Base trophies (combined)
         trophies = player.get('trophies', 'N/A')
