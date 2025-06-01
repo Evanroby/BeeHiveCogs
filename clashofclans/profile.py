@@ -1043,7 +1043,7 @@ class ClashProfile(commands.Cog):
                 continue
 
     def _detect_profile_changes(self, old, new):
-        """Return a list of change strings if anything interesting changed, including achievements."""
+        """Return a list of change strings if anything interesting changed, including achievements, spells, troops, hero equipment, and heroes."""
         if not old:
             return []
         changes = []
@@ -1131,6 +1131,60 @@ class ClashProfile(commands.Cog):
                 changes.append(
                     f"**🎉 Achievement completed: {ach_name} ({new_stars}⭐)**\n-# {old_value} → {new_value}/{target}"
                 )
+
+        # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
+        # Helper for logging upgrades
+        def log_upgrade(old_list, new_list, key_name, emoji, extra_fields=None):
+            # extra_fields: list of (field, display_name) to show in log
+            old_map = {item["name"]: item for item in old_list if "name" in item}
+            new_map = {item["name"]: item for item in new_list if "name" in item}
+            for name, new_item in new_map.items():
+                old_item = old_map.get(name)
+                if not old_item:
+                    # New spell/troop/hero/equipment appeared
+                    continue
+                old_level = old_item.get("level", 0)
+                new_level = new_item.get("level", 0)
+                if new_level > old_level:
+                    msg = f"**{emoji} {key_name} upgraded: {name}**\n-# **{old_level} → {new_level}**"
+                    if extra_fields:
+                        for field, display in extra_fields:
+                            old_val = old_item.get(field)
+                            new_val = new_item.get(field)
+                            if old_val != new_val and new_val is not None:
+                                msg += f"\n-# {display}: {old_val} → {new_val}"
+                    changes.append(msg)
+
+        # Spells
+        log_upgrade(
+            old.get("spells", []),
+            new.get("spells", []),
+            "Spell",
+            "🧪"
+        )
+        # Troops
+        log_upgrade(
+            old.get("troops", []),
+            new.get("troops", []),
+            "Troop",
+            "⚔️"
+        )
+        # Heroes
+        log_upgrade(
+            old.get("heroes", []),
+            new.get("heroes", []),
+            "Hero",
+            "🦸"
+        )
+        # Hero Equipment (if present)
+        # Some players may not have this field
+        log_upgrade(
+            old.get("heroEquipment", []),
+            new.get("heroEquipment", []),
+            "Hero Equipment",
+            "🛡️",
+            extra_fields=[("level", "Level"), ("quality", "Quality")]
+        )
 
         return changes
 
