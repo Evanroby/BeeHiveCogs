@@ -162,7 +162,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             embed.add_field(name="League", value=league.get("name", "N/A"))
             if league_icon:
                 embed.set_image(url=league_icon)
-        embed.set_footer(text="Clash of Clans Player Info")
         await ctx.send(embed=embed)
 
     @clashprofile.command(name="achievements")
