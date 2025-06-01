@@ -160,8 +160,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         embed.add_field(name="War Stars", value=player.get("warStars", "N/A"))
         embed.add_field(name="Attack Wins", value=player.get("attackWins", "N/A"))
         embed.add_field(name="Defense Wins", value=player.get("defenseWins", "N/A"))
-        embed.add_field(name="Donations", value=player.get("donations", "N/A"))
-        embed.add_field(name="Donations Received", value=player.get("donationsReceived", "N/A"))
+        embed.add_field(name="Troops donated", value=player.get("donations", "N/A"))
+        embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"))
         embed.add_field(name="Clan Capital Contributions", value=player.get("clanCapitalContributions", "N/A"))
         # Set thumbnail to the player's division/rank badge if available, otherwise clan badge
         thumbnail_url = None
