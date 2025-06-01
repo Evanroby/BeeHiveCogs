@@ -649,20 +649,27 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("No spells found for this player.")
             return
 
-        embed = discord.Embed(
+        # Prepare embed for spells, formatting like heroes (one field per spell, with level/maxLevel)
+        embed_spells = discord.Embed(
             title=f"Spells for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
             color=discord.Color.teal()
         )
-        spell_lines = []
+
         for spell in spells:
-            spell_lines.append(f"{spell.get('name', 'Unknown')}: {spell.get('level', 0)}/{spell.get('maxLevel', 0)}")
-        for i in range(0, len(spell_lines), 20):
-            embed.add_field(
-                name=f"Spells {i+1}-{min(i+20, len(spell_lines))}",
-                value="\n".join(spell_lines[i:i+20]),
-                inline=False
+            spell_name = spell.get("name", "Unknown")
+            spell_level = spell.get("level", 0)
+            spell_max = spell.get("maxLevel", 0)
+            value = f"-# Level {spell_level}/{spell_max}"
+            # Discord embed field value max length is 1024, so truncate if needed
+            if len(value) > 1024:
+                value = value[:1021] + "..."
+            embed_spells.add_field(
+                name=f"{spell_name}",
+                value=value,
+                inline=True
             )
-        await ctx.send(embed=embed)
+
+        await ctx.send(embed=embed_spells)
 
     @clash_profile.command(name="labels")
     async def clash_profile_labels(self, ctx, user: discord.User = None):
