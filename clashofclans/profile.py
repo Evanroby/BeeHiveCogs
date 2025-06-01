@@ -17,8 +17,17 @@ class ClashProfile(commands.Cog):
         self.config = Config.get_conf(self, identifier=1234567890, force_registration=True)
         default_user = {"tag": None, "verified": False, "last_profile": None}
         self.config.register_user(**default_user)
-        # Guild config: log_channel, clan_tag
-        default_guild = {"log_channel": None, "clan_tag": None}
+        # Guild config: log_channel, clan_tag, role settings
+        default_guild = {
+            "log_channel": None,
+            "clan_tag": None,
+            "roles": {
+                "member": None,
+                "elder": None,
+                "coleader": None,
+                "leader": None
+            }
+        }
         self.config.register_guild(**default_guild)
         self._log_task = self.bot.loop.create_task(self._log_loop())
 
@@ -94,6 +103,69 @@ class ClashProfile(commands.Cog):
         await ctx.send(
             f"Logging channel: {log_channel.mention if log_channel else 'Not set'}\n"
             f"Clan tag: {clan_tag or 'Not set'}"
+        )
+
+    # --- ROLES COMMAND GROUP ---
+    @clash.group(name="roles")
+    @commands.guild_only()
+    async def clash_roles(self, ctx):
+        """Clash of Clans role assignment settings."""
+
+    @clash_roles.command(name="setmember")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_roles_setmember(self, ctx, role: discord.Role = None):
+        """Set the role to assign to clan members (not elder/coleader/leader). Omit to clear."""
+        await self.config.guild(ctx.guild).roles.member.set(role.id if role else None)
+        if role:
+            await ctx.send(f"✅ Clan member role set to {role.mention}.")
+        else:
+            await ctx.send("✅ Clan member role cleared.")
+
+    @clash_roles.command(name="setelder")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_roles_setelder(self, ctx, role: discord.Role = None):
+        """Set the role to assign to clan elders. Omit to clear."""
+        await self.config.guild(ctx.guild).roles.elder.set(role.id if role else None)
+        if role:
+            await ctx.send(f"✅ Clan elder role set to {role.mention}.")
+        else:
+            await ctx.send("✅ Clan elder role cleared.")
+
+    @clash_roles.command(name="setcoleader")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_roles_setcoleader(self, ctx, role: discord.Role = None):
+        """Set the role to assign to clan co-leaders. Omit to clear."""
+        await self.config.guild(ctx.guild).roles.coleader.set(role.id if role else None)
+        if role:
+            await ctx.send(f"✅ Clan co-leader role set to {role.mention}.")
+        else:
+            await ctx.send("✅ Clan co-leader role cleared.")
+
+    @clash_roles.command(name="setleader")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_roles_setleader(self, ctx, role: discord.Role = None):
+        """Set the role to assign to clan leaders. Omit to clear."""
+        await self.config.guild(ctx.guild).roles.leader.set(role.id if role else None)
+        if role:
+            await ctx.send(f"✅ Clan leader role set to {role.mention}.")
+        else:
+            await ctx.send("✅ Clan leader role cleared.")
+
+    @clash_roles.command(name="show")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_roles_show(self, ctx):
+        """Show current role assignment settings."""
+        roles_cfg = await self.config.guild(ctx.guild).roles()
+        def get_role_mention(role_id):
+            if not role_id:
+                return "Not set"
+            role = ctx.guild.get_role(role_id)
+            return role.mention if role else f"ID:{role_id} (not found)"
+        await ctx.send(
+            f"Member: {get_role_mention(roles_cfg.get('member'))}\n"
+            f"Elder: {get_role_mention(roles_cfg.get('elder'))}\n"
+            f"Co-Leader: {get_role_mention(roles_cfg.get('coleader'))}\n"
+            f"Leader: {get_role_mention(roles_cfg.get('leader'))}"
         )
 
     @clash.group(name="profile")
@@ -196,7 +268,7 @@ class ClashProfile(commands.Cog):
                         def parse_coc_time(ts):
                             # Remove milliseconds if present
                             ts = ts.split(".")[0]
-                            # Format: YYYYMMDDTHHMMSSZ
+                            # Format: YYYYMMDDT HHMMSS Z
                             return datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
                         season_start = parse_coc_time(season_data.get("startTime"))
                         season_end = parse_coc_time(season_data.get("endTime"))
@@ -795,6 +867,7 @@ class ClashProfile(commands.Cog):
             try:
                 log_channel_id = await self.config.guild(guild).log_channel()
                 clan_tag = await self.config.guild(guild).clan_tag()
+                roles_cfg = await self.config.guild(guild).roles()
                 if not log_channel_id or not clan_tag:
                     continue
                 log_channel = guild.get_channel(log_channel_id)
@@ -819,6 +892,40 @@ class ClashProfile(commands.Cog):
                     player_clan = player.get("clan", {}).get("tag", "").upper()
                     if player_clan != clan_tag.upper():
                         continue
+
+                    # --- ROLE ASSIGNMENT LOGIC ---
+                    # Only assign roles if the bot has permissions and the roles are set
+                    player_role = player.get("role", "").lower()
+                    # Map coc role to config key
+                    role_map = {
+                        "member": "member",
+                        "admin": "elder",
+                        "coleader": "coleader",
+                        "leader": "leader"
+                    }
+                    role_key = role_map.get(player_role, None)
+                    # Build a set of all possible role IDs to remove (if set)
+                    all_role_ids = set(filter(None, [
+                        roles_cfg.get("member"),
+                        roles_cfg.get("elder"),
+                        roles_cfg.get("coleader"),
+                        roles_cfg.get("leader"),
+                    ]))
+                    # Remove all coc roles, then add the correct one if set
+                    roles_to_remove = [guild.get_role(rid) for rid in all_role_ids if guild.get_role(rid) in member.roles]
+                    for r in roles_to_remove:
+                        try:
+                            await member.remove_roles(r, reason="Clash of Clans role sync")
+                        except Exception:
+                            pass
+                    # Add the correct role
+                    if role_key and roles_cfg.get(role_key):
+                        role_obj = guild.get_role(roles_cfg[role_key])
+                        if role_obj and role_obj not in member.roles:
+                            try:
+                                await member.add_roles(role_obj, reason="Clash of Clans role sync")
+                            except Exception:
+                                pass
 
                     # Get last profile snapshot
                     last_profile = await self.config.user(member).last_profile()
