@@ -60,12 +60,16 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                     return None
                 return await resp.json()
 
-    @commands.group(name="clashprofile")
-    async def clashprofile(self, ctx):
+    @commands.group(name="clash")
+    async def clash(self, ctx):
+        """Clash of Clans commands."""
+
+    @clash.group(name="profile")
+    async def clash_profile(self, ctx):
         """Clash of Clans profile commands."""
 
-    @clashprofile.command(name="link")
-    async def clashprofile_link(self, ctx, tag: str, apikey: str):
+    @clash_profile.command(name="link")
+    async def clash_profile_link(self, ctx, tag: str, apikey: str):
         """Set your Clash of Clans user tag and verify account ownership."""
         if not tag.startswith("#"):
             await ctx.send("Please provide a valid player tag starting with # (e.g. #ABC123).")
@@ -86,8 +90,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await self.config.user(ctx.author).verified.set(False)
             await ctx.send("❌ Verification failed. Please ensure your tag and API key are correct and try again. Remember, the API key is a one-time use token from the in-game settings.")
 
-    @clashprofile.command(name="info")
-    async def clashprofile_info(self, ctx, tag: str = None):
+    @clash_profile.command(name="info")
+    async def clash_profile_info(self, ctx, tag: str = None):
         """Get general information about a Clash of Clans player."""
 
         async def get_brightest_color_from_url(url):
@@ -126,7 +130,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             user_tag = await self.config.user(ctx.author).tag()
             verified = await self.config.user(ctx.author).verified()
             if not user_tag or not verified:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first or provide a tag.")
                 return
             tag = user_tag
 
@@ -213,8 +217,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             embed.set_thumbnail(url=thumbnail_url)
         await ctx.send(embed=embed)
 
-    @clashprofile.command(name="achievements")
-    async def clashprofile_achievements(self, ctx, tag: str = None):
+    @clash_profile.command(name="achievements")
+    async def clash_profile_achievements(self, ctx, tag: str = None):
         """Get a paginated, scrollable list of achievements for a Clash of Clans player."""
 
         dev_api_key = await self.get_dev_api_key()
@@ -226,7 +230,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             user_tag = await self.config.user(ctx.author).tag()
             verified = await self.config.user(ctx.author).verified()
             if not user_tag or not verified:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first or provide a tag.")
                 return
             tag = user_tag
 
@@ -309,8 +313,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                     pass
                 break
 
-    @clashprofile.command(name="troops")
-    async def clashprofile_troops(self, ctx, tag: str = None):
+    @clash_profile.command(name="troops")
+    async def clash_profile_troops(self, ctx, tag: str = None):
         """Get a list of troops and their levels for a Clash of Clans player."""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -321,7 +325,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             user_tag = await self.config.user(ctx.author).tag()
             verified = await self.config.user(ctx.author).verified()
             if not user_tag or not verified:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first or provide a tag.")
                 return
             tag = user_tag
 
@@ -351,8 +355,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             )
         await ctx.send(embed=embed)
 
-    @clashprofile.command(name="heroes")
-    async def clashprofile_heroes(self, ctx, tag: str = None):
+    @clash_profile.command(name="heroes")
+    async def clash_profile_heroes(self, ctx, tag: str = None):
         """Get a list of heroes and their levels for a Clash of Clans player."""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -363,7 +367,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             user_tag = await self.config.user(ctx.author).tag()
             verified = await self.config.user(ctx.author).verified()
             if not user_tag or not verified:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first or provide a tag.")
                 return
             tag = user_tag
 
@@ -391,8 +395,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             )
         await ctx.send(embed=embed)
 
-    @clashprofile.command(name="spells")
-    async def clashprofile_spells(self, ctx, tag: str = None):
+    @clash_profile.command(name="spells")
+    async def clash_profile_spells(self, ctx, tag: str = None):
         """Get a list of spells and their levels for a Clash of Clans player."""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -403,7 +407,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             user_tag = await self.config.user(ctx.author).tag()
             verified = await self.config.user(ctx.author).verified()
             if not user_tag or not verified:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first or provide a tag.")
                 return
             tag = user_tag
 
@@ -432,8 +436,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             )
         await ctx.send(embed=embed)
 
-    @clashprofile.command(name="labels")
-    async def clashprofile_labels(self, ctx, tag: str = None):
+    @clash_profile.command(name="labels")
+    async def clash_profile_labels(self, ctx, tag: str = None):
         """Get a list of labels for a Clash of Clans player."""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -444,7 +448,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             user_tag = await self.config.user(ctx.author).tag()
             verified = await self.config.user(ctx.author).verified()
             if not user_tag or not verified:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first or provide a tag.")
                 return
             tag = user_tag
 
