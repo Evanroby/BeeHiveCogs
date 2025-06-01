@@ -597,7 +597,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                     if len(value) > 1024:
                         value = value[:1021] + "..."
                     embed_unequipped.add_field(
-                        name=f"Unequipped {i+1}-{min(i+10, len(eq_lines))}",
+                        name=f"",
                         value=value,
                         inline=True
                     )
