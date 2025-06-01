@@ -194,19 +194,10 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         # Show user labels if available
         labels = player.get("labels", [])
         if labels:
-            label_strs = []
-            for label in labels:
-                icon_url = label.get("iconUrls", {}).get("small") or label.get("iconUrls", {}).get("medium")
-                if icon_url:
-                    # Discord markdown for inline image: <icon_url>
-                    label_strs.append(f"[‎]({icon_url}) {label.get('name', 'Unknown')}")
-                else:
-                    label_strs.append(label.get("name", "Unknown"))
-            # Discord doesn't support inline images in field values, but we can use links with zero-width space for a small icon effect
-            # We'll join with " | " for separation
+            label_strs = [label.get("name", "Unknown") for label in labels]
             embed.add_field(
                 name="Labels",
-                value=" | ".join(label_strs),
+                value="\n- ".join(label_strs),
                 inline=False
             )
 
