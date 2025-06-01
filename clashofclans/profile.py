@@ -204,11 +204,22 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         embed.add_field(name="Troops donated", value=player.get("donations", "N/A"), inline=True)
         embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"), inline=True)
 
+        # Parse lifetime gold and elixir stolen from achievements
+        lifetime_gold_stolen = "N/A"
+        lifetime_elixir_stolen = "N/A"
+        for ach in achievements:
+            if ach.get("name", "").lower() == "gold grab":
+                lifetime_gold_stolen = ach.get("value", "N/A")
+            elif ach.get("name", "").lower() == "elixir escapade":
+                lifetime_elixir_stolen = ach.get("value", "N/A")
+
         embed.add_field(name="Lifetime stats", value="", inline=False)
-        embed.add_field(name="Lifetime attacks won", value=lifetime_attack_wins, inline=True)
-        embed.add_field(name="Lifetime successful defenses", value=lifetime_defense_wins, inline=True)
+        embed.add_field(name="Attacks won", value=lifetime_attack_wins, inline=True)
+        embed.add_field(name="Successful defenses", value=lifetime_defense_wins, inline=True)
         embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
         embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
+        embed.add_field(name="Gold stolen", value=lifetime_gold_stolen, inline=True)
+        embed.add_field(name="Elixir stolen", value=lifetime_elixir_stolen, inline=True)
 
         # Show user labels if available
         labels = player.get("labels", [])
