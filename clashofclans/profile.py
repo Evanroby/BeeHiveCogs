@@ -681,32 +681,99 @@ class ClashProfile(commands.Cog):
             await ctx.send("No troops found for this player.")
             return
 
-        embed_troops = discord.Embed(
-            title=f"Troops for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
-            color=discord.Color.blue()
-        )
-
         # Group troops by village for better organization
         troops_by_village = defaultdict(list)
         for troop in troops:
             village = troop.get('village', 'Unknown')
             troops_by_village[village].append(troop)
 
+        # Flatten the grouped troops into a list of (village, troop) tuples for paging
+        troop_entries = []
         for village, troop_list in troops_by_village.items():
             for troop in troop_list:
+                troop_entries.append((village, troop))
+
+        PAGE_SIZE = 9
+        total_pages = max(1, math.ceil(len(troop_entries) / PAGE_SIZE))
+        page = 0
+
+        LEFT_EMOJI = "⬅️"
+        CLOSE_EMOJI = "❌"
+        RIGHT_EMOJI = "➡️"
+        EMOJIS = [LEFT_EMOJI, CLOSE_EMOJI, RIGHT_EMOJI]
+
+        def make_embed(page_num):
+            embed = discord.Embed(
+                title=f"Troops for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                color=discord.Color.blue()
+            )
+            start = page_num * PAGE_SIZE
+            end = start + PAGE_SIZE
+            page_entries = troop_entries[start:end]
+
+            # Optionally, show the village as a prefix in the field name if there are multiple villages
+            show_village = len(troops_by_village) > 1
+
+            for village, troop in page_entries:
                 troop_name = troop.get("name", "Unknown")
                 troop_level = troop.get("level", 0)
                 troop_max = troop.get("maxLevel", 0)
                 value = f"-# Level {troop_level}/{troop_max}"
                 if len(value) > 1024:
                     value = value[:1021] + "..."
-                embed_troops.add_field(
-                    name=f"{troop_name}",
+                field_name = f"[{village}] {troop_name}" if show_village else troop_name
+                embed.add_field(
+                    name=field_name,
                     value=value,
                     inline=True
                 )
+            embed.set_footer(text=f"Page {page_num+1}/{total_pages} • {len(troop_entries)} troops")
+            return embed
 
-        await ctx.send(embed=embed_troops)
+        embed = make_embed(page)
+        message = await ctx.send(embed=embed)
+        for emoji in EMOJIS:
+            await message.add_reaction(emoji)
+
+        def check(reaction, user_):
+            return (
+                user_.id == ctx.author.id
+                and reaction.message.id == message.id
+                and str(reaction.emoji) in EMOJIS
+            )
+
+        while True:
+            try:
+                reaction, user_ = await ctx.bot.wait_for("reaction_add", timeout=120.0, check=check)
+            except asyncio.TimeoutError:
+                try:
+                    await message.clear_reactions()
+                except Exception:
+                    pass
+                break
+
+            if str(reaction.emoji) == LEFT_EMOJI:
+                if page > 0:
+                    page -= 1
+                    await message.edit(embed=make_embed(page))
+                try:
+                    await message.remove_reaction(LEFT_EMOJI, user_)
+                except Exception:
+                    pass
+            elif str(reaction.emoji) == RIGHT_EMOJI:
+                if page < total_pages - 1:
+                    page += 1
+                    await message.edit(embed=make_embed(page))
+                try:
+                    await message.remove_reaction(RIGHT_EMOJI, user_)
+                except Exception:
+                    pass
+            elif str(reaction.emoji) == CLOSE_EMOJI:
+                try:
+                    await message.delete()
+                except Exception:
+                    pass
+                break
 
     @clash_profile.command(name="heroes")
     async def clash_profile_heroes(self, ctx, user: discord.User = None):
