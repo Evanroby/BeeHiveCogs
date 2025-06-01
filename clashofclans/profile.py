@@ -192,6 +192,13 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             color=embed_color
         )
 
+        # Account Level
+        embed.add_field(
+            name="Account level",
+            value=f"-# **{EMOJI_LEVEL} {player.get('expLevel', 'N/A')}**",
+            inline=True
+        )
+
         # Town Hall & Builder Hall (combined)
         townhall_level = player.get('townHallLevel', 'N/A')
         builderhall_level = player.get('builderHallLevel')
@@ -199,15 +206,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         if builderhall_level:
             townhall_field += f"\n-# **{EMOJI_BUILDERHALL} {builderhall_level}**"
         embed.add_field(
-            name="Town hall / Builder hall",
+            name="Town halls",
             value=townhall_field,
-            inline=True
-        )
-
-        # Account Level
-        embed.add_field(
-            name="Account level",
-            value=f"-# **{EMOJI_LEVEL} {player.get('expLevel', 'N/A')}**",
             inline=True
         )
 
