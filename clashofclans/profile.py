@@ -568,7 +568,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         # Discord embed field value max length is 1024, so chunk if needed
         for i in range(0, len(hero_lines), 5):
             embed_heroes.add_field(
-                name=f"Heroes {i+1}-{min(i+2, len(hero_lines))}",
+                name=f"",
                 value="\n\n".join(hero_lines[i:i+5]),
                 inline=False
             )
