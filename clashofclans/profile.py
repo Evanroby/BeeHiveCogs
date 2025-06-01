@@ -199,8 +199,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             clan_icon = clan.get("badgeUrls", {}).get("medium")
             embed.set_author(
                 name=f"{clan_name} ({clan_tag})",
-                icon_url=clan_icon if clan_icon else discord.Embed.Empty,
-                url=clan_icon if clan_icon else discord.Embed.Empty
+                icon_url=clan_icon if clan_icon else discord.Embed.Empty
             )
 
         # Account Level
