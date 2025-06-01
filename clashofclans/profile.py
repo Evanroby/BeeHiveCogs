@@ -270,7 +270,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             elif ach.get("name", "").lower() == "unbreakable":
                 lifetime_defense_wins = ach.get("value", "N/A")
 
-        embed.add_field(name="This season", value="", inline=False)
+        embed.add_field(name="This season", value="A season lasts for the entire calendar month, starting on its first day and ending on its last", inline=False)
         embed.add_field(
             name="Attacks won",
             value=f"-# **{EMOJI_ATTACK} {player.get('attackWins', 'N/A')}**",
