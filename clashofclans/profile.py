@@ -254,10 +254,19 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             start = page * PAGE_SIZE
             end = min(start + PAGE_SIZE, len(achievements))
             for ach in achievements[start:end]:
-                stars = "⭐" * ach.get("stars", 0)
+                stars = ach.get("stars", 0)
+                # Show just the achievement name in the field name
+                # Show the stars as level on the first line as -#
+                value_lines = [
+                    f"-# {stars}",
+                ]
+                # Optionally, you can add more info if you want, but per prompt, keep it minimal
+                # value_lines.append(f"{ach.get('info', '')}")
+                # value_lines.append(f"Progress: {ach.get('value', 0)}/{ach.get('target', 0)}")
+                # value_lines.append(f"{ach.get('completionInfo', '') or ''}")
                 embed.add_field(
-                    name=f"{ach.get('name', 'Unknown')} {stars}",
-                    value=f"{ach.get('info', '')}\nProgress: {ach.get('value', 0)}/{ach.get('target', 0)}\n{ach.get('completionInfo', '') or ''}",
+                    name=f"{ach.get('name', 'Unknown')}",
+                    value="\n".join(value_lines),
                     inline=True
                 )
             total_pages = math.ceil(len(achievements) / PAGE_SIZE)
