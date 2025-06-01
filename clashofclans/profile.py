@@ -160,7 +160,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         role_label = ""
         player_role = player.get("role", "").lower()
         if player_role == "admin":
-            role_label = " ClanElder"
+            role_label = " Clan Elder"
         elif player_role == "coleader":
             role_label = " Clan Co-Leader"
         elif player_role == "leader":
