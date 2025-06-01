@@ -190,6 +190,26 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         embed.add_field(name="Successful defenses", value=player.get("defenseWins", "N/A"), inline=True)
         embed.add_field(name="Troops donated", value=player.get("donations", "N/A"), inline=True)
         embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"), inline=True)
+
+        # Show user labels if available
+        labels = player.get("labels", [])
+        if labels:
+            label_strs = []
+            for label in labels:
+                icon_url = label.get("iconUrls", {}).get("small") or label.get("iconUrls", {}).get("medium")
+                if icon_url:
+                    # Discord markdown for inline image: <icon_url>
+                    label_strs.append(f"[‎]({icon_url}) {label.get('name', 'Unknown')}")
+                else:
+                    label_strs.append(label.get("name", "Unknown"))
+            # Discord doesn't support inline images in field values, but we can use links with zero-width space for a small icon effect
+            # We'll join with " | " for separation
+            embed.add_field(
+                name="Labels",
+                value=" | ".join(label_strs),
+                inline=False
+            )
+
         # Set thumbnail to the player's division/rank badge if available, otherwise clan badge
         thumbnail_url = None
         if player.get("league"):
