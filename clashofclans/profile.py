@@ -144,7 +144,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         # Default color
-        embed_color = discord.Color.grey()
+        embed_color = 0x4b4b4b
 
         # Try to get the league badge color if available
         league_icon = None
