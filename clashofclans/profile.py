@@ -162,7 +162,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             color=embed_color
         )
         embed.add_field(name="Town hall", value=player.get("townHallLevel", "N/A"), inline=True)
-        embed.add_field(name="Experience level", value=player.get("expLevel", "N/A"), inline=True)
+        embed.add_field(name="Account level", value=player.get("expLevel", "N/A"), inline=True)
         if player.get("clan"):
             clan = player["clan"]
             embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=True)
