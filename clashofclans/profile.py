@@ -1043,9 +1043,11 @@ class ClashProfile(commands.Cog):
             if color_from_img:
                 color = color_from_img
 
+        tag_line = f"-# {player.get('tag', '')}"
+        description = f"{tag_line}\n" + "\n".join(changes)
         embed = discord.Embed(
-            title=f"{player.get('name', 'Unknown')} ({player.get('tag', '')})",
-            description="\n".join(changes),
+            title=f"{player.get('name', 'Unknown')}",
+            description=description,
             color=color
         )
         embed.set_footer(text=f"{member} ({member.id})")
