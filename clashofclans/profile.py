@@ -163,17 +163,22 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         embed.add_field(name="Donations", value=player.get("donations", "N/A"))
         embed.add_field(name="Donations Received", value=player.get("donationsReceived", "N/A"))
         embed.add_field(name="Clan Capital Contributions", value=player.get("clanCapitalContributions", "N/A"))
+        # Set thumbnail to the player's division/rank badge if available, otherwise clan badge
+        thumbnail_url = None
+        if player.get("league"):
+            league = player["league"]
+            thumbnail_url = league.get("iconUrls", {}).get("medium")
+        if not thumbnail_url and player.get("clan"):
+            clan = player["clan"]
+            thumbnail_url = clan.get("badgeUrls", {}).get("medium")
         if player.get("clan"):
             clan = player["clan"]
             embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=False)
-            badge_url = clan.get("badgeUrls", {}).get("medium")
-            if badge_url:
-                embed.set_thumbnail(url=badge_url)
         if player.get("league"):
             league = player["league"]
             embed.add_field(name="League", value=league.get("name", "N/A"))
-            if league_icon:
-                embed.set_image(url=league_icon)
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
         await ctx.send(embed=embed)
 
     @clashprofile.command(name="achievements")
