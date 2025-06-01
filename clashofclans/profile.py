@@ -1,10 +1,12 @@
 import discord
-from discord.ext import commands
-
+from redbot.core import commands  # Use Red's commands base
 import aiohttp
 
-class ClashProfile(commands.Cog):
+class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
+    """Clash of Clans profile commands."""
+
     def __init__(self, bot):
+        super().__init__()  # Ensure proper Cog initialization
         self.bot = bot
         # In production, use persistent config
         self.user_tags = {}  # {discord_id: {"tag": str, "verified": bool}}
