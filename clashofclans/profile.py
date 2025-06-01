@@ -70,7 +70,15 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
     @clash_profile.command(name="link")
     async def clash_profile_link(self, ctx, tag: str, apikey: str):
-        """Link your Clash of Clans account"""
+        """
+        Link your Clash of Clans account
+        
+        **<tag>** - The tag of the account you want to link, found under your screen name on your in-game profile. Looks like a hashtag followed by 8 numbers and letters (e.g. #ABC123).
+
+        **<apikey>** - The key belonging to the account you want to link. You can find it in the in-game settings under Settings > More settings > API.
+
+        It's safe to send your game apikey publicly, as they are designed to be one-time use tokens and will rotate as soon as they're used. Once you run the command, the key won't work for anyone else.
+        """
         if not tag.startswith("#"):
             await ctx.send("Please provide a valid player tag starting with # (e.g. #ABC123).")
             return
