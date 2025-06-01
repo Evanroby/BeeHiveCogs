@@ -507,8 +507,8 @@ class ClashProfile(commands.Cog):
             inline=True
         )
         embed.add_field(
-            name="Clan capital contributions",
-            value=f"-# **{EMOJI_CAPITAL} {format_number(player.get('clanCapitalContributions', 'N/A'))} gold**",
+            name="Clan capital",
+            value=f"-# **{EMOJI_CAPITAL} {format_number(player.get('clanCapitalContributions', 'N/A'))} Capital Gold donated**",
             inline=True
         )
 
