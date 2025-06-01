@@ -170,13 +170,14 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         embed.add_field(name="Trophy record", value=player.get("bestTrophies", "N/A"), inline=True)
         if player.get("league"):
             league = player["league"]
-            embed.add_field(name="League", value=league.get("name", "N/A"), inline=True)
+            embed.add_field(name="Current league", value=league.get("name", "N/A"), inline=True)
         embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
-        embed.add_field(name="Attacks won this season", value=player.get("attackWins", "N/A"), inline=True)
-        embed.add_field(name="Successful defenses this season", value=player.get("defenseWins", "N/A"), inline=True)
+        embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
+        embed.add_field(name="This season", value="", inline=False)
+        embed.add_field(name="Attacks won", value=player.get("attackWins", "N/A"), inline=True)
+        embed.add_field(name="Successful defenses", value=player.get("defenseWins", "N/A"), inline=True)
         embed.add_field(name="Troops donated", value=player.get("donations", "N/A"), inline=True)
         embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"), inline=True)
-        embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
         # Set thumbnail to the player's division/rank badge if available, otherwise clan badge
         thumbnail_url = None
         if player.get("league"):
