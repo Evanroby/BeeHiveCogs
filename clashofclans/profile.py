@@ -187,13 +187,28 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 value="\n".join(league_lines),
                 inline=True
             )
-        embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
-        embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
+
+        # Lifetime stats from achievements
+        achievements = player.get("achievements", [])
+        lifetime_attack_wins = "N/A"
+        lifetime_defense_wins = "N/A"
+        for ach in achievements:
+            if ach.get("name", "").lower() == "conqueror":
+                lifetime_attack_wins = ach.get("value", "N/A")
+            elif ach.get("name", "").lower() == "unbreakable":
+                lifetime_defense_wins = ach.get("value", "N/A")
+
         embed.add_field(name="This season", value="", inline=False)
         embed.add_field(name="Attacks won", value=player.get("attackWins", "N/A"), inline=True)
         embed.add_field(name="Successful defenses", value=player.get("defenseWins", "N/A"), inline=True)
         embed.add_field(name="Troops donated", value=player.get("donations", "N/A"), inline=True)
         embed.add_field(name="Troops received", value=player.get("donationsReceived", "N/A"), inline=True)
+
+        embed.add_field(name="Lifetime stats", value="", inline=False)
+        embed.add_field(name="Lifetime attacks won", value=lifetime_attack_wins, inline=True)
+        embed.add_field(name="Lifetime successful defenses", value=lifetime_defense_wins, inline=True)
+        embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
+        embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
 
         # Show user labels if available
         labels = player.get("labels", [])
