@@ -492,11 +492,6 @@ class ClashProfile(commands.Cog):
             inline=True
         )
         embed.add_field(
-            name="Clan capital contributions",
-            value=f"-# **{EMOJI_CAPITAL} {format_number(player.get('clanCapitalContributions', 'N/A'))}**",
-            inline=True
-        )
-        embed.add_field(
             name="Gold stolen",
             value=f"-# **{EMOJI_GOLD} {format_number(lifetime_gold_stolen)}**",
             inline=True
@@ -509,6 +504,11 @@ class ClashProfile(commands.Cog):
         embed.add_field(
             name="Dark Elixir stolen",
             value=f"-# **{EMOJI_DARK} {format_number(lifetime_dark_elixir_stolen)}**",
+            inline=True
+        )
+        embed.add_field(
+            name="Clan capital contributions",
+            value=f"-# **{EMOJI_CAPITAL} {format_number(player.get('clanCapitalContributions', 'N/A'))} gold**",
             inline=True
         )
 
@@ -957,6 +957,8 @@ class ClashProfile(commands.Cog):
                     elif last_profile is None:
                         # First time, just store snapshot
                         await self.config.user(member).last_profile.set(player)
+                    # Add a small delay between API calls to avoid rate limiting
+                    await asyncio.sleep(1.2)
             except Exception:
                 continue
 
