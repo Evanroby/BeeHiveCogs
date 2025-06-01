@@ -327,9 +327,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             start_unix = int(season_start.timestamp())
             end_unix = int(season_end.timestamp())
             season_explainer = (
-                f"A season lasts for the entire calendar month.\n"
-                f"Current season: <t:{start_unix}:D> to <t:{end_unix}:D> "
-                f"([<t:{start_unix}:R></t:{end_unix}:R>])"
+                f"An in-game season lasts for the entire calendar month. "
+                f"This season will run from <t:{start_unix}:D> to <t:{end_unix}:D>. It started <t:{start_unix}:R> and ends <t:{end_unix}:R>."
             )
         else:
             season_explainer = "A season lasts for the entire calendar month, starting on its first day and ending on its last"
