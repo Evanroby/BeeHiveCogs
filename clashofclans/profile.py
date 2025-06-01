@@ -168,9 +168,21 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=True)
         embed.add_field(name="Current trophies", value=player.get("trophies", "N/A"), inline=True)
         embed.add_field(name="Trophy record", value=player.get("bestTrophies", "N/A"), inline=True)
+        league_lines = []
         if player.get("league"):
             league = player["league"]
-            embed.add_field(name="Current league", value=league.get("name", "N/A"), inline=True)
+            league_name = league.get("name", "N/A")
+            league_lines.append(f"🏆 {league_name}")
+        if player.get("builderBaseLeague"):
+            builder_league = player["builderBaseLeague"]
+            builder_league_name = builder_league.get("name", "N/A")
+            league_lines.append(f"🛠️ {builder_league_name}")
+        if league_lines:
+            embed.add_field(
+                name="Current leagues",
+                value="\n".join(league_lines),
+                inline=True
+            )
         embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
         embed.add_field(name="Clan capital contributions", value=player.get("clanCapitalContributions", "N/A"), inline=True)
         embed.add_field(name="This season", value="", inline=False)
