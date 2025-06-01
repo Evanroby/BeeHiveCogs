@@ -504,7 +504,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
     @clash_profile.command(name="heroes")
     async def clash_profile_heroes(self, ctx, user: discord.User = None):
-        """Get a list of heroes and their levels for a Clash of Clans player. Omit argument for yourself, or mention another user."""
+        """See player heroes and equipped/unequipped hero equipment in a detailed format."""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -528,23 +528,92 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         heroes = player.get("heroes", [])
+        hero_equipment = player.get("heroEquipment", [])
+
         if not heroes:
             await ctx.send("No heroes found for this player.")
             return
 
-        embed = discord.Embed(
+        # Gather all equipped equipment (by name) for easy lookup
+        equipped_names = set()
+        for hero in heroes:
+            for eq in hero.get("equipment", []):
+                if eq.get("name"):
+                    equipped_names.add(eq["name"])
+
+        # Prepare embed for heroes and their equipped equipment
+        embed_heroes = discord.Embed(
             title=f"Heroes for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
             color=discord.Color.purple()
         )
+
+        hero_lines = []
         for hero in heroes:
+            hero_name = hero.get("name", "Unknown")
+            hero_level = hero.get("level", 0)
+            hero_max = hero.get("maxLevel", 0)
+            hero_village = hero.get("village", "")
             eq = hero.get("equipment", [])
-            eq_str = ", ".join(f"{e.get('name', '')} (Lv{e.get('level', 0)})" for e in eq) if eq else "None"
-            embed.add_field(
-                name=f"{hero.get('name', 'Unknown')}: {hero.get('level', 0)}/{hero.get('maxLevel', 0)}",
-                value=f"Equipment: {eq_str}",
+            if eq:
+                eq_lines = []
+                for e in eq:
+                    eq_lines.append(
+                        f"- {e.get('name', 'Unknown')} (Lv{e.get('level', 0)}/{e.get('maxLevel', 0)}) [{e.get('village', '')}]"
+                    )
+                eq_str = "\n".join(eq_lines)
+            else:
+                eq_str = "None"
+            hero_lines.append(
+                f"**{hero_name}** (Lv{hero_level}/{hero_max}) [{hero_village}]\nEquipment:\n{eq_str}"
+            )
+        # Discord embed field value max length is 1024, so chunk if needed
+        for i in range(0, len(hero_lines), 2):
+            embed_heroes.add_field(
+                name=f"Heroes {i+1}-{min(i+2, len(hero_lines))}",
+                value="\n\n".join(hero_lines[i:i+2]),
                 inline=False
             )
-        await ctx.send(embed=embed)
+
+        await ctx.send(embed=embed_heroes)
+
+        # Prepare embed for unequipped hero equipment
+        if hero_equipment:
+            unequipped = [
+                eq for eq in hero_equipment
+                if eq.get("name") and eq["name"] not in equipped_names
+            ]
+            if unequipped:
+                embed_unequipped = discord.Embed(
+                    title=f"Unequipped Hero Equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                    color=discord.Color.dark_gold()
+                )
+                eq_lines = []
+                for eq in unequipped:
+                    eq_lines.append(
+                        f"{eq.get('name', 'Unknown')}: Lv{eq.get('level', 0)}/{eq.get('maxLevel', 0)} [{eq.get('village', '')}]"
+                    )
+                # Chunk if needed
+                for i in range(0, len(eq_lines), 10):
+                    embed_unequipped.add_field(
+                        name=f"Unequipped {i+1}-{min(i+10, len(eq_lines))}",
+                        value="\n".join(eq_lines[i:i+10]),
+                        inline=False
+                    )
+                await ctx.send(embed=embed_unequipped)
+            else:
+                embed_unequipped = discord.Embed(
+                    title=f"Unequipped Hero Equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                    description="All hero equipment is currently equipped.",
+                    color=discord.Color.dark_gold()
+                )
+                await ctx.send(embed=embed_unequipped)
+        else:
+            embed_unequipped = discord.Embed(
+                title=f"Unequipped Hero Equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                description="No hero equipment found for this player.",
+                color=discord.Color.dark_gold()
+            )
+            await ctx.send(embed=embed_unequipped)
 
     @clash_profile.command(name="spells")
     async def clash_profile_spells(self, ctx, user: discord.User = None):
