@@ -1,5 +1,5 @@
 import discord
-from redbot.core import commands  # Use Red's commands base
+from redbot.core import commands, Config  # Use Red's commands base and Config for persistence
 import math
 import aiohttp
 from io import BytesIO
@@ -11,8 +11,10 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     def __init__(self, bot):
         super().__init__()  # Ensure proper Cog initialization
         self.bot = bot
-        # In production, use persistent config
-        self.user_tags = {}  # {discord_id: {"tag": str, "verified": bool}}
+        # Use Red's Config for persistent, per-user, global storage
+        self.config = Config.get_conf(self, identifier=0xC0C0C0C0, force_registration=True)
+        default_user = {"tag": None, "verified": False}
+        self.config.register_user(**default_user)
         # Assume dev_api_key is stored in bot's config or attribute
 
     async def get_dev_api_key(self):
@@ -76,9 +78,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
         verified = await self.verify_coc_account(tag, apikey, dev_api_key)
         if verified:
-            self.user_tags[ctx.author.id] = {"tag": tag.upper(), "verified": True}
+            await self.config.user(ctx.author).tag.set(tag.upper())
+            await self.config.user(ctx.author).verified.set(True)
             await ctx.send(f"✅ Your Clash of Clans profile has been set and verified for tag {tag.upper()}!")
         else:
+            await self.config.user(ctx.author).tag.set(None)
+            await self.config.user(ctx.author).verified.set(False)
             await ctx.send("❌ Verification failed. Please ensure your tag and API key are correct and try again. Remember, the API key is a one-time use token from the in-game settings.")
 
     @clashprofile.command(name="info")
@@ -112,11 +117,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         if tag is None:
-            user_data = self.user_tags.get(ctx.author.id)
-            if not user_data or not user_data.get("verified"):
+            user_tag = await self.config.user(ctx.author).tag()
+            verified = await self.config.user(ctx.author).verified()
+            if not user_tag or not verified:
                 await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
                 return
-            tag = user_data["tag"]
+            tag = user_tag
 
         player = await self.fetch_player_data(tag, dev_api_key)
         if not player:
@@ -174,11 +180,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         if tag is None:
-            user_data = self.user_tags.get(ctx.author.id)
-            if not user_data or not user_data.get("verified"):
+            user_tag = await self.config.user(ctx.author).tag()
+            verified = await self.config.user(ctx.author).verified()
+            if not user_tag or not verified:
                 await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
                 return
-            tag = user_data["tag"]
+            tag = user_tag
 
         player = await self.fetch_player_data(tag, dev_api_key)
         if not player:
@@ -230,6 +237,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 and str(reaction.emoji) in EMOJIS
             )
 
+        import asyncio
+
         while True:
             try:
                 reaction, user = await ctx.bot.wait_for("reaction_add", timeout=120.0, check=check)
@@ -266,11 +275,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         if tag is None:
-            user_data = self.user_tags.get(ctx.author.id)
-            if not user_data or not user_data.get("verified"):
+            user_tag = await self.config.user(ctx.author).tag()
+            verified = await self.config.user(ctx.author).verified()
+            if not user_tag or not verified:
                 await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
                 return
-            tag = user_data["tag"]
+            tag = user_tag
 
         player = await self.fetch_player_data(tag, dev_api_key)
         if not player:
@@ -307,11 +317,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         if tag is None:
-            user_data = self.user_tags.get(ctx.author.id)
-            if not user_data or not user_data.get("verified"):
+            user_tag = await self.config.user(ctx.author).tag()
+            verified = await self.config.user(ctx.author).verified()
+            if not user_tag or not verified:
                 await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
                 return
-            tag = user_data["tag"]
+            tag = user_tag
 
         player = await self.fetch_player_data(tag, dev_api_key)
         if not player:
@@ -346,11 +357,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         if tag is None:
-            user_data = self.user_tags.get(ctx.author.id)
-            if not user_data or not user_data.get("verified"):
+            user_tag = await self.config.user(ctx.author).tag()
+            verified = await self.config.user(ctx.author).verified()
+            if not user_tag or not verified:
                 await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
                 return
-            tag = user_data["tag"]
+            tag = user_tag
 
         player = await self.fetch_player_data(tag, dev_api_key)
         if not player:
@@ -386,11 +398,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         if tag is None:
-            user_data = self.user_tags.get(ctx.author.id)
-            if not user_data or not user_data.get("verified"):
+            user_tag = await self.config.user(ctx.author).tag()
+            verified = await self.config.user(ctx.author).verified()
+            if not user_tag or not verified:
                 await ctx.send("You have not linked and verified your Clash of Clans account. Use `clashprofile link` first or provide a tag.")
                 return
-            tag = user_data["tag"]
+            tag = user_tag
 
         player = await self.fetch_player_data(tag, dev_api_key)
         if not player:
