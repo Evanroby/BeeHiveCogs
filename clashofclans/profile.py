@@ -172,11 +172,11 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         if player.get("league"):
             league = player["league"]
             league_name = league.get("name", "N/A")
-            league_lines.append(f"🏆 {league_name}")
+            league_lines.append(f"-# 🏆 {league_name}")
         if player.get("builderBaseLeague"):
             builder_league = player["builderBaseLeague"]
             builder_league_name = builder_league.get("name", "N/A")
-            league_lines.append(f"🛠️ {builder_league_name}")
+            league_lines.append(f"-# 🛠️ {builder_league_name}")
         if league_lines:
             embed.add_field(
                 name="Current leagues",
