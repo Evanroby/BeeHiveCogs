@@ -547,7 +547,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             color=discord.Color.purple()
         )
 
-        hero_lines = []
         for hero in heroes:
             hero_name = hero.get("name", "Unknown")
             hero_level = hero.get("level", 0)
@@ -562,14 +561,13 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 eq_str = "\n".join(eq_lines)
             else:
                 eq_str = "None"
-            hero_lines.append(
-                f"### {hero_name}\n-# Level {hero_level}/{hero_max}\n{eq_str}"
-            )
-        # Discord embed field value max length is 1024, so chunk if needed
-        for i in range(0, len(hero_lines), 5):
+            value = f"-# Level {hero_level}/{hero_max}\n{eq_str}"
+            # Discord embed field value max length is 1024, so truncate if needed
+            if len(value) > 1024:
+                value = value[:1021] + "..."
             embed_heroes.add_field(
-                name=f"",
-                value="\n\n".join(hero_lines[i:i+5]),
+                name=f"{hero_name}",
+                value=value,
                 inline=False
             )
 
