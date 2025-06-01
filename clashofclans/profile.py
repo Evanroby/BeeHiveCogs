@@ -910,28 +910,37 @@ class ClashProfile(commands.Cog):
                         "leader": "leader"
                     }
                     role_key = role_map.get(player_role, None)
-                    # Build a set of all possible role IDs to remove (if set)
+                    # Build a set of all possible role IDs
                     all_role_ids = set(filter(None, [
                         roles_cfg.get("member"),
                         roles_cfg.get("elder"),
                         roles_cfg.get("coleader"),
                         roles_cfg.get("leader"),
                     ]))
-                    # Remove all coc roles, then add the correct one if set
-                    roles_to_remove = [guild.get_role(rid) for rid in all_role_ids if guild.get_role(rid) and guild.get_role(rid) in member.roles]
+                    # Determine the correct role object to assign (if any)
+                    correct_role_obj = None
+                    if role_key and roles_cfg.get(role_key):
+                        correct_role_obj = guild.get_role(roles_cfg[role_key])
+
+                    # Only remove roles that are CoC roles and not the correct one
+                    roles_to_remove = []
+                    for rid in all_role_ids:
+                        role_obj = guild.get_role(rid)
+                        if role_obj and role_obj in member.roles:
+                            if correct_role_obj is None or role_obj.id != correct_role_obj.id:
+                                roles_to_remove.append(role_obj)
+                    # Remove only roles that are not the correct one
                     for r in roles_to_remove:
                         try:
                             await member.remove_roles(r, reason="Clash of Clans role sync")
                         except Exception:
                             pass
-                    # Add the correct role
-                    if role_key and roles_cfg.get(role_key):
-                        role_obj = guild.get_role(roles_cfg[role_key])
-                        if role_obj and role_obj not in member.roles:
-                            try:
-                                await member.add_roles(role_obj, reason="Clash of Clans role sync")
-                            except Exception:
-                                pass
+                    # Add the correct role if not present
+                    if correct_role_obj and correct_role_obj not in member.roles:
+                        try:
+                            await member.add_roles(correct_role_obj, reason="Clash of Clans role sync")
+                        except Exception:
+                            pass
 
                     # Get last profile snapshot
                     last_profile = await self.config.user(member).last_profile()
