@@ -102,6 +102,8 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     async def clash_profile_info(self, ctx, user: discord.User = None):
         """Get general information about a Clash of Clans player. Omit argument for yourself, or mention another user."""
 
+        import datetime
+
         async def get_brightest_color_from_url(url):
             try:
                 async with aiohttp.ClientSession() as session:
@@ -150,6 +152,32 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         if not player:
             await ctx.send("Could not fetch player data. Please check the tag and try again.")
             return
+
+        # Fetch current season info from /goldpass/seasons/current
+        season_start = None
+        season_end = None
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    "https://api.clashofclans.com/v1/goldpass/seasons/current",
+                    headers={
+                        "Authorization": f"Bearer {dev_api_key}",
+                        "Accept": "application/json"
+                    }
+                ) as resp:
+                    if resp.status == 200:
+                        season_data = await resp.json()
+                        # Example: "20250601T080100.000Z"
+                        def parse_coc_time(ts):
+                            # Remove milliseconds if present
+                            ts = ts.split(".")[0]
+                            # Format: YYYYMMDDTHHMMSSZ
+                            return datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
+                        season_start = parse_coc_time(season_data.get("startTime"))
+                        season_end = parse_coc_time(season_data.get("endTime"))
+        except Exception:
+            season_start = None
+            season_end = None
 
         # Default color
         embed_color = 0x4b4b4b
@@ -294,7 +322,21 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             elif ach.get("name", "").lower() == "unbreakable":
                 lifetime_defense_wins = ach.get("value", "N/A")
 
-        embed.add_field(name="This season", value="A season lasts for the entire calendar month, starting on its first day and ending on its last", inline=False)
+        # Build the season explainer with dynamic timestamps if available
+        if season_start and season_end:
+            # Discord dynamic timestamp: <t:unix:format>
+            # <t:unix:R> = relative, <t:unix:D> = date, <t:unix:F> = full
+            start_unix = int(season_start.timestamp())
+            end_unix = int(season_end.timestamp())
+            season_explainer = (
+                f"A season lasts for the entire calendar month.\n"
+                f"Current season: <t:{start_unix}:D> to <t:{end_unix}:D> "
+                f"([<t:{start_unix}:R></t:{end_unix}:R>])"
+            )
+        else:
+            season_explainer = "A season lasts for the entire calendar month, starting on its first day and ending on its last"
+
+        embed.add_field(name="This season", value=season_explainer, inline=False)
         embed.add_field(
             name="Attacks won",
             value=f"-# **{EMOJI_ATTACK} {player.get('attackWins', 'N/A')}**",
