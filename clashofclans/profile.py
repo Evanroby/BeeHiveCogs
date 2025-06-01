@@ -1107,31 +1107,32 @@ class ClashProfile(commands.Cog):
 
     async def _build_log_embed(self, member, player, changes):
         color = 0x4b4b4b
-        thumb_url = None
+        author_icon_url = None
 
         if player.get("league"):
             league_icon = player["league"].get("iconUrls", {}).get("medium")
             if league_icon:
-                thumb_url = league_icon
+                author_icon_url = league_icon
         elif player.get("clan"):
             clan_icon = player["clan"].get("badgeUrls", {}).get("medium")
             if clan_icon:
-                thumb_url = clan_icon
+                author_icon_url = clan_icon
 
-        if thumb_url:
-            color_from_img = await get_brightest_color_from_url(thumb_url)
+        if author_icon_url:
+            color_from_img = await get_brightest_color_from_url(author_icon_url)
             if color_from_img:
                 color = color_from_img
 
         tag_line = f"-# {player.get('tag', '')}"
         description = f"{tag_line}\n" + "\n".join(changes)
         embed = discord.Embed(
-            title=f"{player.get('name', 'Unknown')}",
             description=description,
             color=color
         )
+        embed.set_author(
+            name=f"{player.get('name', 'Unknown')}",
+            icon_url=author_icon_url if author_icon_url else discord.Embed.Empty
+        )
         embed.set_footer(text=f"{member} ({member.id})")
-        if thumb_url:
-            embed.set_thumbnail(url=thumb_url)
         return embed
 
