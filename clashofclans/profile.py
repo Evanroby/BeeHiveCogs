@@ -552,19 +552,18 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             hero_name = hero.get("name", "Unknown")
             hero_level = hero.get("level", 0)
             hero_max = hero.get("maxLevel", 0)
-            hero_village = hero.get("village", "")
             eq = hero.get("equipment", [])
             if eq:
                 eq_lines = []
                 for e in eq:
                     eq_lines.append(
-                        f"- {e.get('name', 'Unknown')} (Lv{e.get('level', 0)}/{e.get('maxLevel', 0)}) [{e.get('village', '')}]"
+                        f"- {e.get('name', 'Unknown')} (Lv{e.get('level', 0)}/{e.get('maxLevel', 0)})"
                     )
                 eq_str = "\n".join(eq_lines)
             else:
                 eq_str = "None"
             hero_lines.append(
-                f"**{hero_name}** (Lv{hero_level}/{hero_max}) [{hero_village}]\nEquipment:\n{eq_str}"
+                f"**{hero_name}**\n-# Level {hero_level}/{hero_max})\n{eq_str}"
             )
         # Discord embed field value max length is 1024, so chunk if needed
         for i in range(0, len(hero_lines), 2):
