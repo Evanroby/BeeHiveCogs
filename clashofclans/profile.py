@@ -177,29 +177,11 @@ class ClashProfile(commands.Cog):
             await ctx.send("No warlog entries found for this clan.")
             return
 
-        # --- Improved Formatting ---
-        # Emoji definitions for values
-        EMOJI_STAR = "⭐"
-        EMOJI_DESTRUCTION = "💥"
-        EMOJI_VS = "⚔️"
-        EMOJI_WIN = "🏆"
-        EMOJI_LOSS = "❌"
-        EMOJI_DRAW = "🤝"
-        EMOJI_HOME = "🏠"
-        EMOJI_OPP = "🛡️"
-        EMOJI_TIME = "⏰"
+        # Pagination
+        PAGE_SIZE = 5
+        total_pages = max(1, math.ceil(len(warlogs) / PAGE_SIZE))
+        page = 0
 
-        # Helper for result emoji
-        def get_result_emoji(result):
-            if result.lower() == "win":
-                return EMOJI_WIN
-            elif result.lower() == "lose":
-                return EMOJI_LOSS
-            elif result.lower() == "draw":
-                return EMOJI_DRAW
-            return "❓"
-
-        # Helper for formatting numbers
         def format_number(val):
             try:
                 if isinstance(val, int):
@@ -212,10 +194,21 @@ class ClashProfile(commands.Cog):
                 pass
             return val
 
-        # Pagination
-        PAGE_SIZE = 5
-        total_pages = max(1, math.ceil(len(warlogs) / PAGE_SIZE))
-        page = 0
+        def explain_result(result, clan1, clan2):
+            # result: "win", "lose", "draw", etc.
+            # clan1 is always the home clan (the one whose warlog this is)
+            # clan2 is the opponent
+            if not result:
+                return "-# **Result unknown.**"
+            result = result.lower()
+            if result == "win":
+                return f"-# **{clan1.get('name', 'Your clan')} won against {clan2.get('name', 'the opponent')}!**"
+            elif result == "lose":
+                return f"-# **{clan1.get('name', 'Your clan')} lost to {clan2.get('name', 'the opponent')}.**"
+            elif result == "draw":
+                return f"-# **{clan1.get('name', 'Your clan')} drew with {clan2.get('name', 'the opponent')}.**"
+            else:
+                return f"-# **Result: {result.capitalize()}**"
 
         def make_embed(page_num):
             embed = discord.Embed(
@@ -229,14 +222,12 @@ class ClashProfile(commands.Cog):
             page_wars = warlogs[start:end]
 
             for war in page_wars:
-                result = war.get("result", "unknown").capitalize()
-                result_emoji = get_result_emoji(result)
+                result = war.get("result", "unknown")
                 end_time = war.get("endTime")
                 # Parse end time to Discord timestamp if possible
                 end_time_str = ""
                 if end_time:
                     try:
-                        # Example: "20240610T180000.000Z"
                         ts = end_time.split(".")[0]
                         dt = datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
                         unix = int(dt.timestamp())
@@ -251,20 +242,30 @@ class ClashProfile(commands.Cog):
                 clan2_stars = clan2.get("stars", "?")
                 clan1_destr = clan1.get("destructionPercentage", 0)
                 clan2_destr = clan2.get("destructionPercentage", 0)
-                attacks = war.get("teamSize", "?")
-                attacks_per_side = war.get("attacksPerMember", "?")
-                # Format field
-                field_title = f"{result_emoji} {clan1_name} {EMOJI_VS} {clan2_name}"
-                field_value = (
-                    f"{EMOJI_HOME} **{clan1_name}**\n"
-                    f"- {EMOJI_STAR} Stars: **{format_number(clan1_stars)}**\n"
-                    f"- {EMOJI_DESTRUCTION} Destruction: **{format_number(clan1_destr)}%**\n"
-                    f"{EMOJI_OPP} **{clan2_name}**\n"
-                    f"- {EMOJI_STAR} Stars: **{format_number(clan2_stars)}**\n"
-                    f"- {EMOJI_DESTRUCTION} Destruction: **{format_number(clan2_destr)}%**\n"
-                    f"{EMOJI_TIME} Ended: {end_time_str}\n"
-                    f"Result: **{result}**"
-                )
+                team_size = war.get("teamSize", "?")
+                attacks_per_member = war.get("attacksPerMember", "?")
+                war_type = war.get("type", "War")
+
+                # Compose a more lingual, readable summary
+                summary_lines = [
+                    explain_result(result, clan1, clan2),
+                    f"-# **War type:** {war_type}",
+                    f"-# **Team size:** {team_size} (each member: {attacks_per_member} attacks)",
+                    f"-# **{clan1_name}**: {format_number(clan1_stars)} stars, {format_number(clan1_destr)}% destruction",
+                    f"-# **{clan2_name}**: {format_number(clan2_stars)} stars, {format_number(clan2_destr)}% destruction",
+                    f"-# **Ended:** {end_time_str}"
+                ]
+                # Add a little more explanation for close/draw
+                if str(clan1_stars) == str(clan2_stars):
+                    if abs(float(clan1_destr) - float(clan2_destr)) < 0.01:
+                        summary_lines.append("-# **This war was a perfect tie!**")
+                    else:
+                        if float(clan1_destr) > float(clan2_destr):
+                            summary_lines.append(f"-# **{clan1_name} won on destruction percentage.**")
+                        elif float(clan2_destr) > float(clan1_destr):
+                            summary_lines.append(f"-# **{clan2_name} won on destruction percentage.**")
+                field_title = f"{clan1_name} vs {clan2_name}"
+                field_value = "\n".join(summary_lines)
                 embed.add_field(name=field_title, value=field_value, inline=False)
             embed.set_footer(text=f"Page {page_num+1}/{total_pages} • {len(warlogs)} wars")
             return embed
