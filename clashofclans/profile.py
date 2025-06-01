@@ -191,6 +191,18 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             color=embed_color
         )
 
+        # If the user is in a clan, set the embed author to the clan name/tag and icon
+        if player.get("clan"):
+            clan = player["clan"]
+            clan_name = clan.get("name", "N/A")
+            clan_tag = clan.get("tag", "N/A")
+            clan_icon = clan.get("badgeUrls", {}).get("medium")
+            embed.set_author(
+                name=f"{clan_name} ({clan_tag})",
+                icon_url=clan_icon if clan_icon else discord.Embed.Empty,
+                url=clan_icon if clan_icon else discord.Embed.Empty
+            )
+
         # Account Level
         embed.add_field(
             name="Account level",
