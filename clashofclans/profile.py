@@ -1062,11 +1062,11 @@ class ClashProfile(commands.Cog):
         new_league = new.get("league", {}).get("name") if new.get("league") else None
         if old_league != new_league:
             if old_league and new_league:
-                changes.append(f"**🏅 Changed leagues**\n> {old_league}** → {new_league}**")
+                changes.append(f"**🏅 Changed leagues**\n-# **{old_league} → {new_league}**")
             elif new_league:
-                changes.append(f"**🏅 Entered league**\n> {new_league}")
+                changes.append(f"**🏅 Entered league**\n-# **{new_league}**")
             elif old_league:
-                changes.append(f"**🏅 Left league**\n> {old_league}")
+                changes.append(f"**🏅 Left league**\n-# **{old_league}**")
         # Trophies
         if old.get("trophies") != new.get("trophies"):
             diff = (new.get("trophies") or 0) - (old.get("trophies") or 0)
