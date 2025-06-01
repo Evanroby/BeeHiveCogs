@@ -177,45 +177,147 @@ class ClashProfile(commands.Cog):
             await ctx.send("No warlog entries found for this clan.")
             return
 
-        embed = discord.Embed(
-            title=f"Warlog for {clan_name} ({clan_tag})",
-            color=discord.Color.orange()
-        )
-        if clan_badge:
-            embed.set_thumbnail(url=clan_badge)
+        # --- Improved Formatting ---
+        # Emoji definitions for values
+        EMOJI_STAR = "⭐"
+        EMOJI_DESTRUCTION = "💥"
+        EMOJI_VS = "⚔️"
+        EMOJI_WIN = "🏆"
+        EMOJI_LOSS = "❌"
+        EMOJI_DRAW = "🤝"
+        EMOJI_HOME = "🏠"
+        EMOJI_OPP = "🛡️"
+        EMOJI_TIME = "⏰"
 
-        for war in warlogs:
-            result = war.get("result", "unknown").capitalize()
-            end_time = war.get("endTime")
-            # Parse end time to Discord timestamp if possible
-            end_time_str = ""
-            if end_time:
-                try:
-                    # Example: "20240610T180000.000Z"
-                    ts = end_time.split(".")[0]
-                    dt = datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
-                    unix = int(dt.timestamp())
-                    end_time_str = f"<t:{unix}:R>"
-                except Exception:
-                    end_time_str = end_time
-            clan1 = war.get("clan", {})
-            clan2 = war.get("opponent", {})
-            clan1_name = clan1.get("name", "Unknown")
-            clan2_name = clan2.get("name", "Unknown")
-            clan1_stars = clan1.get("stars", "?")
-            clan2_stars = clan2.get("stars", "?")
-            clan1_destr = clan1.get("destructionPercentage", 0)
-            clan2_destr = clan2.get("destructionPercentage", 0)
-            field_title = f"{clan1_name} vs {clan2_name}"
-            field_value = (
-                f"Result: **{result}**\n"
-                f"Stars: {clan1_stars} - {clan2_stars}\n"
-                f"Destruction: {clan1_destr:.1f}% - {clan2_destr:.1f}%\n"
-                f"Ended: {end_time_str}"
+        # Helper for result emoji
+        def get_result_emoji(result):
+            if result.lower() == "win":
+                return EMOJI_WIN
+            elif result.lower() == "lose":
+                return EMOJI_LOSS
+            elif result.lower() == "draw":
+                return EMOJI_DRAW
+            return "❓"
+
+        # Helper for formatting numbers
+        def format_number(val):
+            try:
+                if isinstance(val, int):
+                    return f"{val:,}"
+                if isinstance(val, float):
+                    return f"{val:,.1f}"
+                if isinstance(val, str) and val.isdigit():
+                    return f"{int(val):,}"
+            except Exception:
+                pass
+            return val
+
+        # Pagination
+        PAGE_SIZE = 5
+        total_pages = max(1, math.ceil(len(warlogs) / PAGE_SIZE))
+        page = 0
+
+        def make_embed(page_num):
+            embed = discord.Embed(
+                title=f"Warlog for {clan_name} ({clan_tag})",
+                color=discord.Color.orange()
             )
-            embed.add_field(name=field_title, value=field_value, inline=False)
+            if clan_badge:
+                embed.set_thumbnail(url=clan_badge)
+            start = page_num * PAGE_SIZE
+            end = start + PAGE_SIZE
+            page_wars = warlogs[start:end]
 
-        await ctx.send(embed=embed)
+            for war in page_wars:
+                result = war.get("result", "unknown").capitalize()
+                result_emoji = get_result_emoji(result)
+                end_time = war.get("endTime")
+                # Parse end time to Discord timestamp if possible
+                end_time_str = ""
+                if end_time:
+                    try:
+                        # Example: "20240610T180000.000Z"
+                        ts = end_time.split(".")[0]
+                        dt = datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
+                        unix = int(dt.timestamp())
+                        end_time_str = f"<t:{unix}:R>"
+                    except Exception:
+                        end_time_str = end_time
+                clan1 = war.get("clan", {})
+                clan2 = war.get("opponent", {})
+                clan1_name = clan1.get("name", "Unknown")
+                clan2_name = clan2.get("name", "Unknown")
+                clan1_stars = clan1.get("stars", "?")
+                clan2_stars = clan2.get("stars", "?")
+                clan1_destr = clan1.get("destructionPercentage", 0)
+                clan2_destr = clan2.get("destructionPercentage", 0)
+                attacks = war.get("teamSize", "?")
+                attacks_per_side = war.get("attacksPerMember", "?")
+                # Format field
+                field_title = f"{result_emoji} {clan1_name} {EMOJI_VS} {clan2_name}"
+                field_value = (
+                    f"{EMOJI_HOME} **{clan1_name}**\n"
+                    f"- {EMOJI_STAR} Stars: **{format_number(clan1_stars)}**\n"
+                    f"- {EMOJI_DESTRUCTION} Destruction: **{format_number(clan1_destr)}%**\n"
+                    f"{EMOJI_OPP} **{clan2_name}**\n"
+                    f"- {EMOJI_STAR} Stars: **{format_number(clan2_stars)}**\n"
+                    f"- {EMOJI_DESTRUCTION} Destruction: **{format_number(clan2_destr)}%**\n"
+                    f"{EMOJI_TIME} Ended: {end_time_str}\n"
+                    f"Result: **{result}**"
+                )
+                embed.add_field(name=field_title, value=field_value, inline=False)
+            embed.set_footer(text=f"Page {page_num+1}/{total_pages} • {len(warlogs)} wars")
+            return embed
+
+        LEFT_EMOJI = "⬅️"
+        CLOSE_EMOJI = "❌"
+        RIGHT_EMOJI = "➡️"
+        EMOJIS = [LEFT_EMOJI, CLOSE_EMOJI, RIGHT_EMOJI]
+
+        embed = make_embed(page)
+        message = await ctx.send(embed=embed)
+        for emoji in EMOJIS:
+            await message.add_reaction(emoji)
+
+        def check(reaction, user_):
+            return (
+                user_.id == ctx.author.id
+                and reaction.message.id == message.id
+                and str(reaction.emoji) in EMOJIS
+            )
+
+        while True:
+            try:
+                reaction, user_ = await ctx.bot.wait_for("reaction_add", timeout=120.0, check=check)
+            except asyncio.TimeoutError:
+                try:
+                    await message.clear_reactions()
+                except Exception:
+                    pass
+                break
+
+            if str(reaction.emoji) == LEFT_EMOJI:
+                if page > 0:
+                    page -= 1
+                    await message.edit(embed=make_embed(page))
+                try:
+                    await message.remove_reaction(LEFT_EMOJI, user_)
+                except Exception:
+                    pass
+            elif str(reaction.emoji) == RIGHT_EMOJI:
+                if page < total_pages - 1:
+                    page += 1
+                    await message.edit(embed=make_embed(page))
+                try:
+                    await message.remove_reaction(RIGHT_EMOJI, user_)
+                except Exception:
+                    pass
+            elif str(reaction.emoji) == CLOSE_EMOJI:
+                try:
+                    await message.delete()
+                except Exception:
+                    pass
+                break
 
     @clash.group(name="logs")
     @commands.guild_only()
@@ -1368,7 +1470,6 @@ class ClashProfile(commands.Cog):
             footer_text = f"{tag_line} | {footer_text}"
         embed.set_footer(text=footer_text)
         return embed
-
 
 
 
