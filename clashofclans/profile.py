@@ -70,7 +70,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
     @clash_profile.command(name="link")
     async def clash_profile_link(self, ctx, tag: str, apikey: str):
-        """Set your Clash of Clans user tag and verify account ownership."""
+        """Link your Clash of Clans account"""
         if not tag.startswith("#"):
             await ctx.send("Please provide a valid player tag starting with # (e.g. #ABC123).")
             return
