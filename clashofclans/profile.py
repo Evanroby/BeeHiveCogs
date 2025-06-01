@@ -1,6 +1,7 @@
 import discord
 from redbot.core import commands, Config  # Use Red's commands base and Config for persistence
 import math
+import datetime
 import aiohttp
 from io import BytesIO
 from PIL import Image
@@ -100,9 +101,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
     @clash_profile.command(name="info")
     async def clash_profile_info(self, ctx, user: discord.User = None):
-        """Get general information about a Clash of Clans player. Omit argument for yourself, or mention another user."""
-
-        import datetime
+        """Check player information"""
 
         async def get_brightest_color_from_url(url):
             try:
@@ -206,7 +205,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         EMOJI_TOWNHALL = "🏰"
         EMOJI_BUILDERHALL = "🏚️"
         EMOJI_LEVEL = "🎖️"
-        EMOJI_CLAN = "🛡️"
         EMOJI_TROPHY = "🏆"
         EMOJI_RECORD = "📈"
         EMOJI_BUILDER_RECORD = "🥇"
