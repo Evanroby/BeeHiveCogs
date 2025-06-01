@@ -99,19 +99,19 @@ class ClashProfile(commands.Cog):
     @clash.group(name="logs")
     @commands.guild_only()
     async def clash_logs(self, ctx):
-        """Clash of Clans logging settings."""
+        """Configure game logging settings."""
 
-    @clash_logs.command(name="setchannel")
+    @clash_logs.command(name="channel")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_logs_setchannel(self, ctx, channel: discord.TextChannel):
-        """Set the channel for user update logs."""
+        """Set activity logging channel"""
         await self.config.guild(ctx.guild).log_channel.set(channel.id)
         await ctx.send(f"✅ Logging channel set to {channel.mention}.")
 
-    @clash_logs.command(name="setclan")
+    @clash_logs.command(name="clantag")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_logs_setclan(self, ctx, tag: str):
-        """Set the clan tag for this server (users in this clan will be logged)."""
+        """Set server's clan tag"""
         if not tag.startswith("#"):
             await ctx.send("Please provide a valid clan tag starting with # (e.g. #ABC123).")
             return
@@ -134,42 +134,42 @@ class ClashProfile(commands.Cog):
     @clash.group(name="roles")
     @commands.guild_only()
     async def clash_roles(self, ctx):
-        """Clash of Clans role assignment settings."""
+        """Role assignment and configuration"""
 
-    @clash_roles.command(name="setmember")
+    @clash_roles.command(name="member")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_roles_setmember(self, ctx, role: discord.Role = None):
-        """Set the role to assign to clan members (not elder/coleader/leader). Omit to clear."""
+        """Specify clan member role"""
         await self.config.guild(ctx.guild).roles.member.set(role.id if role else None)
         if role:
             await ctx.send(f"✅ Clan member role set to {role.mention}.")
         else:
             await ctx.send("✅ Clan member role cleared.")
 
-    @clash_roles.command(name="setelder")
+    @clash_roles.command(name="elder")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_roles_setelder(self, ctx, role: discord.Role = None):
-        """Set the role to assign to clan elders. Omit to clear."""
+        """Specify clan elder role"""
         await self.config.guild(ctx.guild).roles.elder.set(role.id if role else None)
         if role:
             await ctx.send(f"✅ Clan elder role set to {role.mention}.")
         else:
             await ctx.send("✅ Clan elder role cleared.")
 
-    @clash_roles.command(name="setcoleader")
+    @clash_roles.command(name="coleader")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_roles_setcoleader(self, ctx, role: discord.Role = None):
-        """Set the role to assign to clan co-leaders. Omit to clear."""
+        """Specify clan co-leader role"""
         await self.config.guild(ctx.guild).roles.coleader.set(role.id if role else None)
         if role:
             await ctx.send(f"✅ Clan co-leader role set to {role.mention}.")
         else:
             await ctx.send("✅ Clan co-leader role cleared.")
 
-    @clash_roles.command(name="setleader")
+    @clash_roles.command(name="leader")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_roles_setleader(self, ctx, role: discord.Role = None):
-        """Set the role to assign to clan leaders. Omit to clear."""
+        """Specify clan leader role"""
         await self.config.guild(ctx.guild).roles.leader.set(role.id if role else None)
         if role:
             await ctx.send(f"✅ Clan leader role set to {role.mention}.")
@@ -195,7 +195,7 @@ class ClashProfile(commands.Cog):
 
     @clash.group(name="profile")
     async def clash_profile(self, ctx):
-        """Clash of Clans profile commands."""
+        """Profiles and user management"""
 
     @clash_profile.command(name="link")
     async def clash_profile_link(self, ctx, tag: str, apikey: str):
@@ -537,7 +537,7 @@ class ClashProfile(commands.Cog):
 
     @clash_profile.command(name="achievements")
     async def clash_profile_achievements(self, ctx, user: discord.User = None):
-        """Get a paginated, scrollable list of achievements for a Clash of Clans player. Omit argument for yourself, or mention another user."""
+        """Show player achievements"""
 
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -654,7 +654,7 @@ class ClashProfile(commands.Cog):
 
     @clash_profile.command(name="troops")
     async def clash_profile_troops(self, ctx, user: discord.User = None):
-        """Get a list of troops and their levels for a Clash of Clans player. Omit argument for yourself, or mention another user."""
+        """Show player troops"""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -884,7 +884,7 @@ class ClashProfile(commands.Cog):
 
     @clash_profile.command(name="spells")
     async def clash_profile_spells(self, ctx, user: discord.User = None):
-        """Get a list of spells and their levels for a Clash of Clans player. Omit argument for yourself, or mention another user."""
+        """Show player spells"""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
