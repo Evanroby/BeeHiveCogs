@@ -331,7 +331,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 f"This season will run from <t:{start_unix}:D> to <t:{end_unix}:D>. It started <t:{start_unix}:R> and ends <t:{end_unix}:R>."
             )
         else:
-            season_explainer = "A season lasts for the entire calendar month, starting on its first day and ending on its last"
+            season_explainer = "A season lasts for the entire calendar month, starting on its first day and ending on its last."
 
         embed.add_field(name="This season", value=season_explainer, inline=False)
         embed.add_field(
@@ -367,7 +367,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             elif ach.get("name", "").lower() == "heroic heist":
                 lifetime_dark_elixir_stolen = ach.get("value", "N/A")
 
-        embed.add_field(name="Lifetime stats", value="", inline=False)
+        embed.add_field(name="Lifetime stats", value="Your in-game statistics from the creation time of your account.", inline=False)
         def format_number(val):
             try:
                 if isinstance(val, int):
