@@ -1042,15 +1042,15 @@ class ClashProfile(commands.Cog):
                                 old_idx = role_hierarchy.index(old_role)
                                 new_idx = role_hierarchy.index(new_role)
                                 if new_idx > old_idx:
-                                    changes.insert(0, f"**⬆️ Was promoted**\n-# {old_disp} → {new_disp}")
+                                    changes.insert(0, f"**⬆️ Was promoted**\n-# **{old_disp}** → **{new_disp}**")
                                 elif new_idx < old_idx:
-                                    changes.insert(0, f"**⬇️ Was demoted**\n-# {old_disp} → {new_disp}")
+                                    changes.insert(0, f"**⬇️ Was demoted**\n-# **{old_disp}** → **{new_disp}**")
                                 else:
                                     # Should not happen, but fallback
-                                    changes.insert(0, f"**🔄 Role changed**\n-# {old_disp} → {new_disp}")
+                                    changes.insert(0, f"**🔄 Role changed**\n-# **{old_disp}** → **{new_disp}**")
                             except Exception:
                                 # If for some reason the role is not in the hierarchy, just log the change
-                                changes.insert(0, f"**🔄 Role changed**\n-# {old_disp} → {new_disp}")
+                                changes.insert(0, f"**🔄 Role changed**\n-# **{old_disp}** → **{new_disp}**")
 
                     if changes:
                         embed = await self._build_log_embed(member, player, changes)
