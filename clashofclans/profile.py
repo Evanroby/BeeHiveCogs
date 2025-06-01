@@ -1024,8 +1024,34 @@ class ClashProfile(commands.Cog):
 
                     # Get last profile snapshot
                     last_profile = await self.config.user(member).last_profile()
-                    # Compare and log changes
+                    # Compare and log changes, including role promotions/demotions
                     changes = self._detect_profile_changes(last_profile, player)
+                    # --- Role promotion/demotion logging ---
+                    if last_profile is not None:
+                        old_role = (last_profile.get("role") or "").lower()
+                        new_role = (player.get("role") or "").lower()
+                        # Only log if changed and both are valid
+                        if old_role != new_role and old_role in role_map and new_role in role_map:
+                            # For display, use CoC role names (capitalize)
+                            old_disp = old_role.capitalize()
+                            new_disp = new_role.capitalize()
+                            # Determine direction
+                            # Define a hierarchy for comparison
+                            role_hierarchy = ["member", "admin", "coleader", "leader"]
+                            try:
+                                old_idx = role_hierarchy.index(old_role)
+                                new_idx = role_hierarchy.index(new_role)
+                                if new_idx > old_idx:
+                                    changes.insert(0, f"**⬆️ Was promoted**\n-# {old_disp} → {new_disp}")
+                                elif new_idx < old_idx:
+                                    changes.insert(0, f"**⬇️ Was demoted**\n-# {old_disp} → {new_disp}")
+                                else:
+                                    # Should not happen, but fallback
+                                    changes.insert(0, f"**🔄 Role changed**\n-# {old_disp} → {new_disp}")
+                            except Exception:
+                                # If for some reason the role is not in the hierarchy, just log the change
+                                changes.insert(0, f"**🔄 Role changed**\n-# {old_disp} → {new_disp}")
+
                     if changes:
                         embed = await self._build_log_embed(member, player, changes)
                         try:
