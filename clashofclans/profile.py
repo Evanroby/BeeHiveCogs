@@ -188,29 +188,29 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         )
         embed.add_field(
             name="Town hall",
-            value=f"{EMOJI_TOWNHALL} {player.get('townHallLevel', 'N/A')}",
+            value=f"-# **{EMOJI_TOWNHALL} {player.get('townHallLevel', 'N/A')}**",
             inline=True
         )
         embed.add_field(
             name="Account level",
-            value=f"{EMOJI_LEVEL} {player.get('expLevel', 'N/A')}",
+            value=f"-# **{EMOJI_LEVEL} {player.get('expLevel', 'N/A')}**",
             inline=True
         )
         if player.get("clan"):
             clan = player["clan"]
             embed.add_field(
                 name="Clan",
-                value=f"{EMOJI_CLAN} {clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})",
+                value=f"-# **{EMOJI_CLAN} {clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})**",
                 inline=True
             )
         embed.add_field(
             name="Current trophies",
-            value=f"{EMOJI_TROPHY} {player.get('trophies', 'N/A')}",
+            value=f"-# **{EMOJI_TROPHY} {player.get('trophies', 'N/A')}**",
             inline=True
         )
         embed.add_field(
             name="Trophy record",
-            value=f"{EMOJI_RECORD} {player.get('bestTrophies', 'N/A')}",
+            value=f"-# **{EMOJI_RECORD} {player.get('bestTrophies', 'N/A')}**",
             inline=True
         )
         league_lines = []
@@ -242,22 +242,22 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         embed.add_field(name="This season", value="", inline=False)
         embed.add_field(
             name="Attacks won",
-            value=f"{EMOJI_ATTACK} {player.get('attackWins', 'N/A')}",
+            value=f"-# **{EMOJI_ATTACK} {player.get('attackWins', 'N/A')}**",
             inline=True
         )
         embed.add_field(
             name="Successful defenses",
-            value=f"{EMOJI_DEFENSE} {player.get('defenseWins', 'N/A')}",
+            value=f"-# **{EMOJI_DEFENSE} {player.get('defenseWins', 'N/A')}**",
             inline=True
         )
         embed.add_field(
             name="Troops donated",
-            value=f"{EMOJI_DONATE} {player.get('donations', 'N/A')}",
+            value=f"-# **{EMOJI_DONATE} {player.get('donations', 'N/A')}**",
             inline=True
         )
         embed.add_field(
             name="Troops received",
-            value=f"{EMOJI_RECEIVE} {player.get('donationsReceived', 'N/A')}",
+            value=f"-# **{EMOJI_RECEIVE} {player.get('donationsReceived', 'N/A')}** ",
             inline=True
         )
 
@@ -286,44 +286,44 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
         embed.add_field(
             name="Attacks won",
-            value=f"{EMOJI_ATTACK} {format_number(lifetime_attack_wins)}",
+            value=f"-# **{EMOJI_ATTACK} {format_number(lifetime_attack_wins)}**",
             inline=True
         )
         embed.add_field(
             name="Successful defenses",
-            value=f"{EMOJI_DEFENSE} {format_number(lifetime_defense_wins)}",
+            value=f"-# **{EMOJI_DEFENSE} {format_number(lifetime_defense_wins)}**",
             inline=True
         )
         embed.add_field(
             name="War stars collected",
-            value=f"{EMOJI_WARSTAR} {format_number(player.get('warStars', 'N/A'))}",
+            value=f"-# **{EMOJI_WARSTAR} {format_number(player.get('warStars', 'N/A'))}**",
             inline=True
         )
         embed.add_field(
             name="Clan capital contributions",
-            value=f"{EMOJI_CAPITAL} {format_number(player.get('clanCapitalContributions', 'N/A'))}",
+            value=f"-# **{EMOJI_CAPITAL} {format_number(player.get('clanCapitalContributions', 'N/A'))}**",
             inline=True
         )
         embed.add_field(
             name="Gold stolen",
-            value=f"{EMOJI_GOLD} {format_number(lifetime_gold_stolen)}",
+            value=f"-# **{EMOJI_GOLD} {format_number(lifetime_gold_stolen)}**",
             inline=True
         )
         embed.add_field(
             name="Elixir stolen",
-            value=f"{EMOJI_ELIXIR} {format_number(lifetime_elixir_stolen)}",
+            value=f"-# **{EMOJI_ELIXIR} {format_number(lifetime_elixir_stolen)}**",
             inline=True
         )
         embed.add_field(
             name="Dark Elixir stolen",
-            value=f"{EMOJI_DARK} {format_number(lifetime_dark_elixir_stolen)}",
+            value=f"-# **{EMOJI_DARK} {format_number(lifetime_dark_elixir_stolen)}**",
             inline=True
         )
 
         # Show user labels if available
         labels = player.get("labels", [])
         if labels:
-            label_strs = [f"{EMOJI_LABEL} {label.get('name', 'Unknown')}" for label in labels]
+            label_strs = [f"-# **{EMOJI_LABEL} {label.get('name', 'Unknown')}**" for label in labels]
             embed.add_field(
                 name="Public labels",
                 value="- " + "\n- ".join(label_strs),
