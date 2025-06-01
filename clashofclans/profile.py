@@ -196,7 +196,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         if labels:
             label_strs = [label.get("name", "Unknown") for label in labels]
             embed.add_field(
-                name="Labels",
+                name="Public labels",
                 value="- " + "\n- ".join(label_strs),
                 inline=False
             )
