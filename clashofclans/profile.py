@@ -1093,7 +1093,7 @@ class ClashProfile(commands.Cog):
         if old.get("clanCapitalContributions") != new.get("clanCapitalContributions"):
             diff = (new.get("clanCapitalContributions") or 0) - (old.get("clanCapitalContributions") or 0)
             if diff > 0:
-                changes.append(f"**🏛️ Contributed {diff} to clan capital**\n-# **{new.get('clanCapitalContributions')} contributions now**")
+                changes.append(f"**🏛️ Contributed {diff} to clan capital**\n-# **{new.get('clanCapitalContributions')} Capital Gold donated so far**")
         # Town Hall level
         if old.get("townHallLevel") != new.get("townHallLevel"):
             changes.append(f"**🏰 Town Hall upgraded**\n-# **{old.get('townHallLevel')}** → **{new.get('townHallLevel')}**")
