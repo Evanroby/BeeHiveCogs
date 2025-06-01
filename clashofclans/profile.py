@@ -163,6 +163,9 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         )
         embed.add_field(name="Town hall", value=player.get("townHallLevel", "N/A"), inline=True)
         embed.add_field(name="Experience level", value=player.get("expLevel", "N/A"), inline=True)
+        if player.get("clan"):
+            clan = player["clan"]
+            embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=True)
         embed.add_field(name="Current trophies", value=player.get("trophies", "N/A"), inline=True)
         embed.add_field(name="Trophy record", value=player.get("bestTrophies", "N/A"), inline=True)
         embed.add_field(name="War stars collected", value=player.get("warStars", "N/A"), inline=True)
@@ -179,9 +182,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         if not thumbnail_url and player.get("clan"):
             clan = player["clan"]
             thumbnail_url = clan.get("badgeUrls", {}).get("medium")
-        if player.get("clan"):
-            clan = player["clan"]
-            embed.add_field(name="Clan", value=f"{clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})", inline=True)
         if player.get("league"):
             league = player["league"]
             embed.add_field(name="League", value=league.get("name", "N/A"), inline=True)
