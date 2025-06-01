@@ -971,47 +971,47 @@ class ClashProfile(commands.Cog):
         new_league = new.get("league", {}).get("name") if new.get("league") else None
         if old_league != new_league:
             if old_league and new_league:
-                changes.append(f"🏅 Changed league: **{old_league}** → **{new_league}**")
+                changes.append(f"🏅 Changed leagues\n> **{old_league}** → **{new_league}**")
             elif new_league:
-                changes.append(f"🏅 Entered league: **{new_league}**")
+                changes.append(f"🏅 Entered league\n> **{new_league}**")
             elif old_league:
-                changes.append(f"🏅 Left league: **{old_league}**")
+                changes.append(f"🏅 Left league\n> **{old_league}**")
         # Trophies
         if old.get("trophies") != new.get("trophies"):
             diff = (new.get("trophies") or 0) - (old.get("trophies") or 0)
             if diff > 0:
-                changes.append(f"📈 Gained {diff} trophies (now {new.get('trophies')})")
+                changes.append(f"📈 Gained {diff} trophies\n-# **{new.get('trophies')} trophies now**")
             elif diff < 0:
-                changes.append(f"📉 Lost {abs(diff)} trophies (now {new.get('trophies')})")
+                changes.append(f"📉 Lost {abs(diff)} trophies\n-# **{new.get('trophies')} trophies now**")
         # Donations
         if old.get("donations") != new.get("donations"):
             diff = (new.get("donations") or 0) - (old.get("donations") or 0)
             if diff > 0:
-                changes.append(f"📤 Donated {diff} troop{'s' if diff > 1 else ''} (now {new.get('donations')})")
+                changes.append(f"📤 Donated {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donations')} donations now**")
         # Donations received
         if old.get("donationsReceived") != new.get("donationsReceived"):
             diff = (new.get("donationsReceived") or 0) - (old.get("donationsReceived") or 0)
             if diff > 0:
-                changes.append(f"📥 Received {diff} troop{'s' if diff > 1 else ''} (now {new.get('donationsReceived')})")
+                changes.append(f"📥 Received {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donationsReceived')} donations received now**")
         # War stars
         if old.get("warStars") != new.get("warStars"):
             diff = (new.get("warStars") or 0) - (old.get("warStars") or 0)
             if diff > 0:
-                changes.append(f"⭐ Gained {diff} war star{'s' if diff > 1 else ''} (now {new.get('warStars')})")
+                changes.append(f"⭐ Gained {diff} war star{'s' if diff > 1 else ''}\n-# **{new.get('warStars')} war stars now**")
         # Clan capital contributions
         if old.get("clanCapitalContributions") != new.get("clanCapitalContributions"):
             diff = (new.get("clanCapitalContributions") or 0) - (old.get("clanCapitalContributions") or 0)
             if diff > 0:
-                changes.append(f"🏛️ Contributed {diff} to clan capital (now {new.get('clanCapitalContributions')})")
+                changes.append(f"🏛️ Contributed {diff} to clan capital\n-# **{new.get('clanCapitalContributions')} contributions now**")
         # Town Hall level
         if old.get("townHallLevel") != new.get("townHallLevel"):
-            changes.append(f"🏰 Town Hall upgraded: {old.get('townHallLevel')} → {new.get('townHallLevel')}")
+            changes.append(f"🏰 Town Hall upgraded\n> **{old.get('townHallLevel')}** → **{new.get('townHallLevel')}**")
         # Builder Hall level
         if old.get("builderHallLevel") != new.get("builderHallLevel"):
-            changes.append(f"🏚️ Builder Hall upgraded: {old.get('builderHallLevel')} → {new.get('builderHallLevel')}")
+            changes.append(f"🏚️ Builder Hall upgraded\n> **{old.get('builderHallLevel')}** → **{new.get('builderHallLevel')}**")
         # Name change
         if old.get("name") != new.get("name"):
-            changes.append(f"📝 Changed name: **{old.get('name')}** → **{new.get('name')}**")
+            changes.append(f"📝 Changed name\n> **{old.get('name')}** → **{new.get('name')}**")
         return changes
 
     async def _build_log_embed(self, member, player, changes):
