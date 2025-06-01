@@ -581,34 +581,39 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             ]
             if unequipped:
                 embed_unequipped = discord.Embed(
-                    title=f"Unequipped Hero Equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
-                    color=discord.Color.dark_gold()
+                    title=f"Spare equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                    color=discord.Color.purple()
                 )
+                # Style each unequipped equipment like equipped: name, then -# Level x/y
                 eq_lines = []
                 for eq in unequipped:
                     eq_lines.append(
-                        f"{eq.get('name', 'Unknown')}: Lv{eq.get('level', 0)}/{eq.get('maxLevel', 0)}"
+                        f"- {eq.get('name', 'Unknown')}\n-# Level {eq.get('level', 0)}/{eq.get('maxLevel', 0)}"
                     )
-                # Chunk if needed
+                # Discord embed field value max length is 1024, so chunk if needed
                 for i in range(0, len(eq_lines), 10):
+                    chunk = eq_lines[i:i+10]
+                    value = "\n".join(chunk)
+                    if len(value) > 1024:
+                        value = value[:1021] + "..."
                     embed_unequipped.add_field(
                         name=f"Unequipped {i+1}-{min(i+10, len(eq_lines))}",
-                        value="\n".join(eq_lines[i:i+10]),
-                        inline=False
+                        value=value,
+                        inline=True
                     )
                 await ctx.send(embed=embed_unequipped)
             else:
                 embed_unequipped = discord.Embed(
-                    title=f"Unequipped Hero Equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                    title=f"Spare equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
                     description="All hero equipment is currently equipped.",
-                    color=discord.Color.dark_gold()
+                    color=discord.Color.purple()
                 )
                 await ctx.send(embed=embed_unequipped)
         else:
             embed_unequipped = discord.Embed(
-                title=f"Unequipped Hero Equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
+                title=f"Spare equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
                 description="No hero equipment found for this player.",
-                color=discord.Color.dark_gold()
+                color=discord.Color.purple()
             )
             await ctx.send(embed=embed_unequipped)
 
