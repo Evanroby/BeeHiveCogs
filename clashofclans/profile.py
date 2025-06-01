@@ -568,7 +568,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             embed_heroes.add_field(
                 name=f"{hero_name}",
                 value=value,
-                inline=False
+                inline=True
             )
 
         await ctx.send(embed=embed_heroes)
