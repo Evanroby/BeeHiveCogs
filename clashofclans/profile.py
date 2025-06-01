@@ -1043,7 +1043,7 @@ class ClashProfile(commands.Cog):
                 continue
 
     def _detect_profile_changes(self, old, new):
-        """Return a list of change strings if anything interesting changed."""
+        """Return a list of change strings if anything interesting changed, including achievements."""
         if not old:
             return []
         changes = []
@@ -1103,6 +1103,35 @@ class ClashProfile(commands.Cog):
         # Name change
         if old.get("name") != new.get("name"):
             changes.append(f"**📝 Changed name**\n-# **{old.get('name')}** → **{new.get('name')}**")
+
+        # --- Achievement completion/upgrade events ---
+        # Only if both old and new have achievements
+        old_achs = {a["name"]: a for a in old.get("achievements", []) if "name" in a}
+        new_achs = {a["name"]: a for a in new.get("achievements", []) if "name" in a}
+        for ach_name, new_ach in new_achs.items():
+            old_ach = old_achs.get(ach_name)
+            if not old_ach:
+                # New achievement appeared (shouldn't happen, but just in case)
+                if new_ach.get("stars", 0) > 0:
+                    changes.append(f"**🎖️ New achievement unlocked: {ach_name}**\n-# {new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}")
+                continue
+            # If stars increased (achievement upgraded)
+            old_stars = old_ach.get("stars", 0)
+            new_stars = new_ach.get("stars", 0)
+            if new_stars > old_stars:
+                changes.append(
+                    f"**🎖️ Achievement upgraded: {ach_name}**\n-# {old_stars}⭐ → {new_stars}⭐ ({new_ach.get('value', 0)}/{new_ach.get('target', 0)})"
+                )
+            # If value increased and target reached (achievement completed at this level)
+            old_value = old_ach.get("value", 0)
+            new_value = new_ach.get("value", 0)
+            target = new_ach.get("target", 0)
+            if new_value >= target and old_value < target and new_stars == old_stars:
+                # Completed this achievement level (but not upgraded yet)
+                changes.append(
+                    f"**🎉 Achievement completed: {ach_name} ({new_stars}⭐)**\n-# {old_value} → {new_value}/{target}"
+                )
+
         return changes
 
     async def _build_log_embed(self, member, player, changes):
