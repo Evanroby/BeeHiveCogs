@@ -1,7 +1,9 @@
 import discord
 from redbot.core import commands  # Use Red's commands base
-import aiohttp
 import math
+import aiohttp
+from io import BytesIO
+from PIL import Image
 
 class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     """Clash of Clans profile commands."""
@@ -82,6 +84,28 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     @clashprofile.command(name="info")
     async def clashprofile_info(self, ctx, tag: str = None):
         """Get general information about a Clash of Clans player."""
+
+        async def get_dominant_color_from_url(url):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as resp:
+                        if resp.status != 200:
+                            return None
+                        data = await resp.read()
+                with Image.open(BytesIO(data)) as img:
+                    img = img.convert("RGBA").resize((32, 32))
+                    pixels = list(img.getdata())
+                    # Remove fully transparent pixels
+                    pixels = [p for p in pixels if p[3] > 0]
+                    if not pixels:
+                        return None
+                    # Get the most common color
+                    from collections import Counter
+                    most_common = Counter(pixels).most_common(1)[0][0]
+                    return discord.Color.from_rgb(most_common[0], most_common[1], most_common[2])
+            except Exception:
+                return None
+
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -99,9 +123,23 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("Could not fetch player data. Please check the tag and try again.")
             return
 
+        # Default color
+        embed_color = discord.Color.green()
+
+        # Try to get the league badge color if available
+        league_icon = None
+        if player.get("league"):
+            league = player["league"]
+            league_icon = league.get("iconUrls", {}).get("medium")
+            if league_icon:
+                color = await get_dominant_color_from_url(league_icon)
+                if color:
+                    embed_color = color
+
         embed = discord.Embed(
-            title=f"{player.get('name', 'Unknown')} ({player.get('tag', tag)})",
-            color=discord.Color.green()
+            title=f"{player.get('name', 'Unknown')}",
+            description=f"-# {player.get('tag', tag)}",
+            color=embed_color
         )
         embed.add_field(name="Town Hall Level", value=player.get("townHallLevel", "N/A"))
         embed.add_field(name="Experience Level", value=player.get("expLevel", "N/A"))
@@ -122,7 +160,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         if player.get("league"):
             league = player["league"]
             embed.add_field(name="League", value=league.get("name", "N/A"))
-            league_icon = league.get("iconUrls", {}).get("medium")
             if league_icon:
                 embed.set_image(url=league_icon)
         embed.set_footer(text="Clash of Clans Player Info")
