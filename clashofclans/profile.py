@@ -92,9 +92,130 @@ class ClashProfile(commands.Cog):
                     return None
                 return await resp.json()
 
+    async def fetch_clan_data(self, tag: str, dev_api_key: str):
+        tag = tag.replace("#", "").upper()
+        url = f"https://api.clashofclans.com/v1/clans/%23{tag}"
+        headers = {
+            "Authorization": f"Bearer {dev_api_key}",
+            "Accept": "application/json"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status != 200:
+                    return None
+                return await resp.json()
+
+    async def fetch_clan_warlog(self, tag: str, dev_api_key: str, limit: int = 10):
+        tag = tag.replace("#", "").upper()
+        url = f"https://api.clashofclans.com/v1/clans/%23{tag}/warlog?limit={limit}"
+        headers = {
+            "Authorization": f"Bearer {dev_api_key}",
+            "Accept": "application/json"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status != 200:
+                    return None
+                return await resp.json()
+
     @commands.group(name="clash")
     async def clash(self, ctx):
         """Clash of Clans commands."""
+
+    @clash.group(name="clan")
+    async def clash_clan(self, ctx):
+        """Clan-related commands."""
+
+    @clash_clan.command(name="warlog")
+    async def clash_clan_warlog(self, ctx, user: discord.User = None):
+        """
+        Show the clan warlog for your clan or another user's clan.
+
+        If no user is specified, shows your clan's warlog.
+        """
+        dev_api_key = await self.get_dev_api_key()
+        if not dev_api_key:
+            await ctx.send("Developer API key is not set up. Please contact the bot owner.")
+            return
+
+        target_user = user or ctx.author
+        user_tag = await self.config.user(target_user).tag()
+        verified = await self.config.user(target_user).verified()
+        if not user_tag or not verified:
+            if user:
+                await ctx.send(f"{user.mention} has not linked and verified their Clash of Clans account.")
+            else:
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first.")
+            return
+
+        player = await self.fetch_player_data(user_tag, dev_api_key)
+        if not player:
+            await ctx.send("Could not fetch player data. Please check the tag and try again.")
+            return
+
+        clan = player.get("clan")
+        if not clan or not clan.get("tag"):
+            await ctx.send("This player is not in a clan.")
+            return
+
+        clan_tag = clan.get("tag")
+        clan_name = clan.get("name", "Unknown")
+        clan_badge = clan.get("badgeUrls", {}).get("medium")
+
+        # Fetch warlog
+        warlog_data = await self.fetch_clan_warlog(clan_tag, dev_api_key, limit=10)
+        if not warlog_data:
+            await ctx.send("Could not fetch clan warlog. The clan may have a private warlog or there was an error.")
+            return
+
+        if warlog_data.get("reason") == "accessDenied":
+            await ctx.send("This clan's warlog is private and cannot be accessed.")
+            return
+
+        warlogs = warlog_data.get("items", [])
+        if not warlogs:
+            await ctx.send("No warlog entries found for this clan.")
+            return
+
+        embed = discord.Embed(
+            title=f"Warlog for {clan_name} ({clan_tag})",
+            color=discord.Color.orange()
+        )
+        if clan_badge:
+            embed.set_thumbnail(url=clan_badge)
+
+        for war in warlogs:
+            result = war.get("result", "unknown").capitalize()
+            end_time = war.get("endTime")
+            # Parse end time to Discord timestamp if possible
+            end_time_str = ""
+            if end_time:
+                try:
+                    # Example: "20240610T180000.000Z"
+                    ts = end_time.split(".")[0]
+                    dt = datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
+                    unix = int(dt.timestamp())
+                    end_time_str = f"<t:{unix}:R>"
+                except Exception:
+                    end_time_str = end_time
+            clan1 = war.get("clan", {})
+            clan2 = war.get("opponent", {})
+            clan1_name = clan1.get("name", "Unknown")
+            clan2_name = clan2.get("name", "Unknown")
+            clan1_stars = clan1.get("stars", "?")
+            clan2_stars = clan2.get("stars", "?")
+            clan1_destr = clan1.get("destructionPercentage", 0)
+            clan2_destr = clan2.get("destructionPercentage", 0)
+            field_title = f"{clan1_name} vs {clan2_name}"
+            field_value = (
+                f"Result: **{result}**\n"
+                f"Stars: {clan1_stars} - {clan2_stars}\n"
+                f"Destruction: {clan1_destr:.1f}% - {clan2_destr:.1f}%\n"
+                f"Ended: {end_time_str}"
+            )
+            embed.add_field(name=field_title, value=field_value, inline=False)
+
+        await ctx.send(embed=embed)
 
     @clash.group(name="logs")
     @commands.guild_only()
@@ -1247,4 +1368,7 @@ class ClashProfile(commands.Cog):
             footer_text = f"{tag_line} | {footer_text}"
         embed.set_footer(text=footer_text)
         return embed
+
+
+
 
