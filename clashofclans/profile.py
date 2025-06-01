@@ -148,9 +148,17 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 if color:
                     embed_color = color
 
+        # Determine role label for tag
+        role_label = ""
+        player_role = player.get("role", "").lower()
+        if player_role == "admin":
+            role_label = " (Elder)"
+        elif player_role == "coleader":
+            role_label = " (Co-Leader)"
+
         embed = discord.Embed(
             title=f"{player.get('name', 'Unknown')}",
-            description=f"-# {player.get('tag', tag)}",
+            description=f"-# {player.get('tag', tag)}{role_label}",
             color=embed_color
         )
         embed.add_field(name="Town Hall", value=player.get("townHallLevel", "N/A"))
