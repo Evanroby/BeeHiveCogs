@@ -1123,20 +1123,19 @@ class ClashProfile(commands.Cog):
             if color_from_img:
                 color = color_from_img
 
-        tag_line = f"-# {player.get('tag', '')}\n"
+        tag_line = f"-# {player.get('tag', '')}"
         description = "\n".join(changes)
-        if description:
-            description = f"{description}\n\n{tag_line}"
-        else:
-            description = tag_line
         embed = discord.Embed(
-            description=description,
+            description=description if description else None,
             color=color
         )
         embed.set_author(
             name=f"{player.get('name', 'Unknown')}",
             icon_url=author_icon_url if author_icon_url else discord.Embed.Empty
         )
-        embed.set_footer(text=f"{member} ({member.id})")
+        footer_text = f"{member} | {member.id}"
+        if tag_line.strip():
+            footer_text = f"{tag_line} | {footer_text}"
+        embed.set_footer(text=footer_text)
         return embed
 
