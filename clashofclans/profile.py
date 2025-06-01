@@ -168,10 +168,13 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
         # Emoji definitions for values
         EMOJI_TOWNHALL = "🏰"
+        EMOJI_BUILDERHALL = "🏚️"
         EMOJI_LEVEL = "🎖️"
         EMOJI_CLAN = "🛡️"
         EMOJI_TROPHY = "🏆"
+        EMOJI_BUILDER_TROPHY = "🔨"
         EMOJI_RECORD = "📈"
+        EMOJI_BUILDER_RECORD = "🥇"
         EMOJI_ATTACK = "⚔️"
         EMOJI_DEFENSE = "🛡️"
         EMOJI_DONATE = "📤"
@@ -188,16 +191,27 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             description=f"{role_label}\n-# {player.get('tag', tag)}",
             color=embed_color
         )
+
+        # Town Hall & Builder Hall (combined)
+        townhall_level = player.get('townHallLevel', 'N/A')
+        builderhall_level = player.get('builderHallLevel')
+        townhall_field = f"-# **{EMOJI_TOWNHALL} {townhall_level}**"
+        if builderhall_level:
+            townhall_field += f"\n-# **{EMOJI_BUILDERHALL} {builderhall_level}**"
         embed.add_field(
-            name="Town hall",
-            value=f"-# **{EMOJI_TOWNHALL} {player.get('townHallLevel', 'N/A')}**",
+            name="Town hall / Builder hall",
+            value=townhall_field,
             inline=True
         )
+
+        # Account Level
         embed.add_field(
             name="Account level",
             value=f"-# **{EMOJI_LEVEL} {player.get('expLevel', 'N/A')}**",
             inline=True
         )
+
+        # Clan
         if player.get("clan"):
             clan = player["clan"]
             embed.add_field(
@@ -205,16 +219,32 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 value=f"-# **{EMOJI_CLAN} {clan.get('name', 'N/A')} ({clan.get('tag', 'N/A')})**",
                 inline=True
             )
+
+        # Current trophies (main village) & Builder Base trophies (combined)
+        trophies = player.get('trophies', 'N/A')
+        builder_base_trophies = player.get('builderBaseTrophies')
+        trophies_field = f"-# **{EMOJI_TROPHY} {trophies}**"
+        if builder_base_trophies:
+            trophies_field += f"\n-# **{EMOJI_BUILDER_TROPHY} {builder_base_trophies}**"
         embed.add_field(
             name="Current trophies",
-            value=f"-# **{EMOJI_TROPHY} {player.get('trophies', 'N/A')}**",
+            value=trophies_field,
             inline=True
         )
+
+        # Trophy record (main village) & Builder Base record (combined)
+        best_trophies = player.get('bestTrophies', 'N/A')
+        best_builder_base_trophies = player.get('bestBuilderBaseTrophies')
+        record_field = f"-# **{EMOJI_RECORD} {best_trophies}**"
+        if best_builder_base_trophies:
+            record_field += f"\n-# **{EMOJI_BUILDER_RECORD} {best_builder_base_trophies}**"
         embed.add_field(
             name="Trophy record",
-            value=f"-# **{EMOJI_RECORD} {player.get('bestTrophies', 'N/A')}**",
+            value=record_field,
             inline=True
         )
+
+        # Leagues
         league_lines = []
         if player.get("league"):
             league = player["league"]
