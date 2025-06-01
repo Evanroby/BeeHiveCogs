@@ -224,9 +224,9 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         # Clan wars participation
         war_pref = player.get("warPreference", "N/A")
         if war_pref == "in":
-            war_status = "⚔️ Participating in clan wars"
+            war_status = "⚔️ Participating"
         elif war_pref == "out":
-            war_status = "🚫 Not participating in clan wars"
+            war_status = "🚫 Not participating"
         else:
             war_status = "Clan war status unknown"
         embed.add_field(
