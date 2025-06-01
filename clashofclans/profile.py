@@ -680,20 +680,33 @@ class ClashProfile(commands.Cog):
             await ctx.send("No troops found for this player.")
             return
 
-        embed = discord.Embed(
+        embed_troops = discord.Embed(
             title=f"Troops for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
             color=discord.Color.blue()
         )
-        troop_lines = []
+
+        # Group troops by village for better organization
+        from collections import defaultdict
+        troops_by_village = defaultdict(list)
         for troop in troops:
-            troop_lines.append(f"{troop.get('name', 'Unknown')}: {troop.get('level', 0)}/{troop.get('maxLevel', 0)} ({troop.get('village', '')})")
-        for i in range(0, len(troop_lines), 20):
-            embed.add_field(
-                name=f"Troops {i+1}-{min(i+20, len(troop_lines))}",
-                value="\n".join(troop_lines[i:i+20]),
-                inline=False
-            )
-        await ctx.send(embed=embed)
+            village = troop.get('village', 'Unknown')
+            troops_by_village[village].append(troop)
+
+        for village, troop_list in troops_by_village.items():
+            for troop in troop_list:
+                troop_name = troop.get("name", "Unknown")
+                troop_level = troop.get("level", 0)
+                troop_max = troop.get("maxLevel", 0)
+                value = f"-# Level {troop_level}/{troop_max}"
+                if len(value) > 1024:
+                    value = value[:1021] + "..."
+                embed_troops.add_field(
+                    name=f"{troop_name}",
+                    value=value,
+                    inline=True
+                )
+
+        await ctx.send(embed=embed_troops)
 
     @clash_profile.command(name="heroes")
     async def clash_profile_heroes(self, ctx, user: discord.User = None):
