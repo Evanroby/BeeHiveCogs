@@ -557,7 +557,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 eq_lines = []
                 for e in eq:
                     eq_lines.append(
-                        f"- {e.get('name', 'Unknown')} (Lv{e.get('level', 0)}/{e.get('maxLevel', 0)})"
+                        f"- {e.get('name', 'Unknown')}\n-# Level {e.get('level', 0)}/{e.get('maxLevel', 0)}"
                     )
                 eq_str = "\n".join(eq_lines)
             else:
