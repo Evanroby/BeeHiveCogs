@@ -55,10 +55,9 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                     return None
                 return await resp.json()
 
-    @commands.group(name="clashprofile", invoke_without_command=True)
+    @commands.group(name="clashprofile")
     async def clashprofile(self, ctx):
         """Clash of Clans profile commands."""
-        await ctx.send("Available subcommands: link, info, achievements, troops, heroes, spells, labels")
 
     @clashprofile.command(name="link")
     async def clashprofile_link(self, ctx, tag: str, apikey: str):
