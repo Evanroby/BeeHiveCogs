@@ -1048,7 +1048,7 @@ class ClashProfile(commands.Cog):
             description="\n".join(changes),
             color=color
         )
-        embed.set_footer(text=f"User: {member} ({member.id})")
+        embed.set_footer(text=f"{member} ({member.id})")
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
         return embed
