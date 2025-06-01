@@ -262,7 +262,9 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 value_lines = []
                 if info:
                     value_lines.append(info)
-                value_lines.append(f"-# {stars}")
+                # Replace the "level" number (stars) with star emojis
+                star_emojis = "⭐" * stars if stars > 0 else "✩"
+                value_lines.append(f"{star_emojis}")
                 value_lines.append(f"{value}/{target}")
                 embed.add_field(
                     name=name,
