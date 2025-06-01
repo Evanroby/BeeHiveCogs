@@ -1124,7 +1124,11 @@ class ClashProfile(commands.Cog):
                 color = color_from_img
 
         tag_line = f"-# {player.get('tag', '')}\n"
-        description = f"{tag_line}\n" + "\n".join(changes)
+        description = "\n".join(changes)
+        if description:
+            description = f"{description}\n{tag_line}"
+        else:
+            description = tag_line
         embed = discord.Embed(
             description=description,
             color=color
