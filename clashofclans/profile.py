@@ -7,6 +7,30 @@ from io import BytesIO
 from PIL import Image
 import asyncio
 
+# Move this helper to the class scope so it can be used in _build_log_embed
+async def get_brightest_color_from_url(url):
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return None
+                data = await resp.read()
+        with Image.open(BytesIO(data)) as img:
+            img = img.convert("RGBA").resize((32, 32))
+            pixels = list(img.getdata())
+            pixels = [p for p in pixels if p[3] > 0]
+            if not pixels:
+                return None
+            def color_richness(p):
+                r, g, b, a = p
+                import colorsys
+                h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
+                return v * 0.7 + s * 0.3
+            brightest = max(pixels, key=color_richness)
+            return discord.Color.from_rgb(brightest[0], brightest[1], brightest[2])
+    except Exception:
+        return None
+
 class ClashProfile(commands.Cog):
     """Clash of Clans profile commands."""
 
@@ -205,29 +229,6 @@ class ClashProfile(commands.Cog):
     @clash_profile.command(name="info")
     async def clash_profile_info(self, ctx, user: discord.User = None):
         """Check player information"""
-
-        async def get_brightest_color_from_url(url):
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as resp:
-                        if resp.status != 200:
-                            return None
-                        data = await resp.read()
-                with Image.open(BytesIO(data)) as img:
-                    img = img.convert("RGBA").resize((32, 32))
-                    pixels = list(img.getdata())
-                    pixels = [p for p in pixels if p[3] > 0]
-                    if not pixels:
-                        return None
-                    def color_richness(p):
-                        r, g, b, a = p
-                        import colorsys
-                        h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
-                        return v * 0.7 + s * 0.3
-                    brightest = max(pixels, key=color_richness)
-                    return discord.Color.from_rgb(brightest[0], brightest[1], brightest[2])
-            except Exception:
-                return None
 
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -583,10 +584,12 @@ class ClashProfile(commands.Cog):
                     value_lines.append(info)
                 star_emojis = "⭐" * stars if stars > 0 else "✩"
                 value_lines.append(f"-# {star_emojis}")
-                if value >= target:
+                if value >= target and target > 0:
                     value_lines.append(f"-# :white_check_mark: Complete")
-                else:
+                elif target > 0:
                     value_lines.append(f"-# {value}/**{target}**")
+                else:
+                    value_lines.append(f"-# {value}")
                 embed.add_field(
                     name=name,
                     value="\n".join(value_lines),
@@ -615,8 +618,6 @@ class ClashProfile(commands.Cog):
                 and str(reaction.emoji) in EMOJIS
             )
 
-        import asyncio
-
         while True:
             try:
                 reaction, user_ = await ctx.bot.wait_for("reaction_add", timeout=120.0, check=check)
@@ -631,12 +632,18 @@ class ClashProfile(commands.Cog):
                 if page > 0:
                     page -= 1
                     await message.edit(embed=make_embed(page))
-                await message.remove_reaction(LEFT_EMOJI, user_)
+                try:
+                    await message.remove_reaction(LEFT_EMOJI, user_)
+                except Exception:
+                    pass
             elif str(reaction.emoji) == RIGHT_EMOJI:
                 if page < total_pages - 1:
                     page += 1
                     await message.edit(embed=make_embed(page))
-                await message.remove_reaction(RIGHT_EMOJI, user_)
+                try:
+                    await message.remove_reaction(RIGHT_EMOJI, user_)
+                except Exception:
+                    pass
             elif str(reaction.emoji) == CLOSE_EMOJI:
                 try:
                     await message.delete()
@@ -690,7 +697,6 @@ class ClashProfile(commands.Cog):
 
     @clash_profile.command(name="heroes")
     async def clash_profile_heroes(self, ctx, user: discord.User = None):
-        # (Unchanged from original code)
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -889,8 +895,8 @@ class ClashProfile(commands.Cog):
                         continue
 
                     # Check if player is in the correct clan
-                    player_clan = player.get("clan", {}).get("tag", "").upper()
-                    if player_clan != clan_tag.upper():
+                    player_clan = player.get("clan", {}).get("tag", "")
+                    if not player_clan or player_clan.upper() != clan_tag.upper():
                         continue
 
                     # --- ROLE ASSIGNMENT LOGIC ---
@@ -912,7 +918,7 @@ class ClashProfile(commands.Cog):
                         roles_cfg.get("leader"),
                     ]))
                     # Remove all coc roles, then add the correct one if set
-                    roles_to_remove = [guild.get_role(rid) for rid in all_role_ids if guild.get_role(rid) in member.roles]
+                    roles_to_remove = [guild.get_role(rid) for rid in all_role_ids if guild.get_role(rid) and guild.get_role(rid) in member.roles]
                     for r in roles_to_remove:
                         try:
                             await member.remove_roles(r, reason="Clash of Clans role sync")
@@ -932,7 +938,7 @@ class ClashProfile(commands.Cog):
                     # Compare and log changes
                     changes = self._detect_profile_changes(last_profile, player)
                     if changes:
-                        embed = self._build_log_embed(member, player, changes)
+                        embed = await self._build_log_embed(member, player, changes)
                         try:
                             await log_channel.send(embed=embed)
                         except Exception:
@@ -952,12 +958,12 @@ class ClashProfile(commands.Cog):
         changes = []
         # Attack wins
         if old.get("attackWins") != new.get("attackWins"):
-            diff = new.get("attackWins", 0) - old.get("attackWins", 0)
+            diff = (new.get("attackWins") or 0) - (old.get("attackWins") or 0)
             if diff > 0:
                 changes.append(f"🏆 Won {diff} attack{'s' if diff > 1 else ''} (now {new.get('attackWins')})")
         # Defense wins
         if old.get("defenseWins") != new.get("defenseWins"):
-            diff = new.get("defenseWins", 0) - old.get("defenseWins", 0)
+            diff = (new.get("defenseWins") or 0) - (old.get("defenseWins") or 0)
             if diff > 0:
                 changes.append(f"🛡️ Won {diff} defense{'s' if diff > 1 else ''} (now {new.get('defenseWins')})")
         # League change
@@ -972,29 +978,29 @@ class ClashProfile(commands.Cog):
                 changes.append(f"🏅 Left league: **{old_league}**")
         # Trophies
         if old.get("trophies") != new.get("trophies"):
-            diff = new.get("trophies", 0) - old.get("trophies", 0)
+            diff = (new.get("trophies") or 0) - (old.get("trophies") or 0)
             if diff > 0:
                 changes.append(f"📈 Gained {diff} trophies (now {new.get('trophies')})")
             elif diff < 0:
                 changes.append(f"📉 Lost {abs(diff)} trophies (now {new.get('trophies')})")
         # Donations
         if old.get("donations") != new.get("donations"):
-            diff = new.get("donations", 0) - old.get("donations", 0)
+            diff = (new.get("donations") or 0) - (old.get("donations") or 0)
             if diff > 0:
                 changes.append(f"📤 Donated {diff} troop{'s' if diff > 1 else ''} (now {new.get('donations')})")
         # Donations received
         if old.get("donationsReceived") != new.get("donationsReceived"):
-            diff = new.get("donationsReceived", 0) - old.get("donationsReceived", 0)
+            diff = (new.get("donationsReceived") or 0) - (old.get("donationsReceived") or 0)
             if diff > 0:
                 changes.append(f"📥 Received {diff} troop{'s' if diff > 1 else ''} (now {new.get('donationsReceived')})")
         # War stars
         if old.get("warStars") != new.get("warStars"):
-            diff = new.get("warStars", 0) - old.get("warStars", 0)
+            diff = (new.get("warStars") or 0) - (old.get("warStars") or 0)
             if diff > 0:
                 changes.append(f"⭐ Gained {diff} war star{'s' if diff > 1 else ''} (now {new.get('warStars')})")
         # Clan capital contributions
         if old.get("clanCapitalContributions") != new.get("clanCapitalContributions"):
-            diff = new.get("clanCapitalContributions", 0) - old.get("clanCapitalContributions", 0)
+            diff = (new.get("clanCapitalContributions") or 0) - (old.get("clanCapitalContributions") or 0)
             if diff > 0:
                 changes.append(f"🏛️ Contributed {diff} to clan capital (now {new.get('clanCapitalContributions')})")
         # Town Hall level
@@ -1008,20 +1014,31 @@ class ClashProfile(commands.Cog):
             changes.append(f"📝 Changed name: **{old.get('name')}** → **{new.get('name')}**")
         return changes
 
-    def _build_log_embed(self, member, player, changes):
-        embed = discord.Embed(
-            title=f"{player.get('name', 'Unknown')} ({player.get('tag', '')})",
-            description="\n".join(changes),
-            color=discord.Color.green()
-        )
-        embed.set_footer(text=f"User: {member} ({member.id})")
+    async def _build_log_embed(self, member, player, changes):
+        color = 0x4b4b4b
+        thumb_url = None
+
         if player.get("league"):
             league_icon = player["league"].get("iconUrls", {}).get("medium")
             if league_icon:
-                embed.set_thumbnail(url=league_icon)
+                thumb_url = league_icon
         elif player.get("clan"):
             clan_icon = player["clan"].get("badgeUrls", {}).get("medium")
             if clan_icon:
-                embed.set_thumbnail(url=clan_icon)
+                thumb_url = clan_icon
+
+        if thumb_url:
+            color_from_img = await get_brightest_color_from_url(thumb_url)
+            if color_from_img:
+                color = color_from_img
+
+        embed = discord.Embed(
+            title=f"{player.get('name', 'Unknown')} ({player.get('tag', '')})",
+            description="\n".join(changes),
+            color=color
+        )
+        embed.set_footer(text=f"User: {member} ({member.id})")
+        if thumb_url:
+            embed.set_thumbnail(url=thumb_url)
         return embed
 
