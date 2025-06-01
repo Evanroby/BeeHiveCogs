@@ -1126,7 +1126,7 @@ class ClashProfile(commands.Cog):
         tag_line = f"-# {player.get('tag', '')}\n"
         description = "\n".join(changes)
         if description:
-            description = f"{description}\n{tag_line}"
+            description = f"{description}\n\n{tag_line}"
         else:
             description = tag_line
         embed = discord.Embed(
