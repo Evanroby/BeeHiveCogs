@@ -144,7 +144,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             return
 
         # Default color
-        embed_color = discord.Color.green()
+        embed_color = discord.Color.grey()
 
         # Try to get the league badge color if available
         league_icon = None
@@ -160,9 +160,11 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         role_label = ""
         player_role = player.get("role", "").lower()
         if player_role == "admin":
-            role_label = " Elder"
+            role_label = " ClanElder"
         elif player_role == "coleader":
-            role_label = " Co-Leader"
+            role_label = " Clan Co-Leader"
+        elif player_role == "leader":
+            role_label = " Clan Leader"
 
         # Emoji definitions for values
         EMOJI_TOWNHALL = "🏰"
