@@ -590,7 +590,7 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 eq_lines = []
                 for eq in unequipped:
                     eq_lines.append(
-                        f"{eq.get('name', 'Unknown')}: Lv{eq.get('level', 0)}/{eq.get('maxLevel', 0)} [{eq.get('village', '')}]"
+                        f"{eq.get('name', 'Unknown')}: Lv{eq.get('level', 0)}/{eq.get('maxLevel', 0)}"
                     )
                 # Chunk if needed
                 for i in range(0, len(eq_lines), 10):
