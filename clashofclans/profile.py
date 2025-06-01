@@ -1,54 +1,51 @@
 import discord
-from redbot.core import commands, Config  # Use Red's commands base and Config for persistence
+from redbot.core import commands, Config, checks
 import math
 import datetime
 import aiohttp
 from io import BytesIO
 from PIL import Image
+import asyncio
 
-class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
+class ClashProfile(commands.Cog):
     """Clash of Clans profile commands."""
 
     def __init__(self, bot):
-        super().__init__()  # Ensure proper Cog initialization
+        super().__init__()
         self.bot = bot
-        # Use Red's Config for persistent, per-user, global storage
+        # User config: tag, verified, last_profile (for logging)
         self.config = Config.get_conf(self, identifier=1234567890, force_registration=True)
-        default_user = {"tag": None, "verified": False}
+        default_user = {"tag": None, "verified": False, "last_profile": None}
         self.config.register_user(**default_user)
-        # Assume dev_api_key is stored in bot's config or attribute
+        # Guild config: log_channel, clan_tag
+        default_guild = {"log_channel": None, "clan_tag": None}
+        self.config.register_guild(**default_guild)
+        self._log_task = self.bot.loop.create_task(self._log_loop())
+
+    def cog_unload(self):
+        if hasattr(self, "_log_task"):
+            self._log_task.cancel()
 
     async def get_dev_api_key(self):
         tokens = await self.bot.get_shared_api_tokens("clashofclans")
         return tokens.get("api_key")
 
     async def verify_coc_account(self, tag: str, user_apikey: str, dev_api_key: str) -> bool:
-        """
-        Verifies the user's Clash of Clans account using the provided tag and user API key.
-        Uses the developer API key for authorization, and checks the /players/{playerTag}/verifytoken endpoint.
-        """
         tag = tag.replace("#", "").upper()
         url = f"https://api.clashofclans.com/v1/players/%23{tag}/verifytoken"
         headers = {
             "Authorization": f"Bearer {dev_api_key}",
             "Accept": "application/json"
         }
-        payload = {
-            "token": user_apikey
-        }
-
+        payload = {"token": user_apikey}
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as resp:
                 if resp.status != 200:
                     return False
                 data = await resp.json()
-                # API returns {"status": "ok"} if verified, {"status": "invalid"} otherwise
                 return data.get("status") == "ok"
 
     async def fetch_player_data(self, tag: str, dev_api_key: str):
-        """
-        Fetches player data from the Clash of Clans API.
-        """
         tag = tag.replace("#", "").upper()
         url = f"https://api.clashofclans.com/v1/players/%23{tag}"
         headers = {
@@ -64,6 +61,40 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
     @commands.group(name="clash")
     async def clash(self, ctx):
         """Clash of Clans commands."""
+
+    @clash.group(name="logs")
+    @commands.guild_only()
+    async def clash_logs(self, ctx):
+        """Clash of Clans logging settings."""
+
+    @clash_logs.command(name="setchannel")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_logs_setchannel(self, ctx, channel: discord.TextChannel):
+        """Set the channel for user update logs."""
+        await self.config.guild(ctx.guild).log_channel.set(channel.id)
+        await ctx.send(f"✅ Logging channel set to {channel.mention}.")
+
+    @clash_logs.command(name="setclan")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_logs_setclan(self, ctx, tag: str):
+        """Set the clan tag for this server (users in this clan will be logged)."""
+        if not tag.startswith("#"):
+            await ctx.send("Please provide a valid clan tag starting with # (e.g. #ABC123).")
+            return
+        await self.config.guild(ctx.guild).clan_tag.set(tag.upper())
+        await ctx.send(f"✅ Clan tag for this server set to {tag.upper()}.")
+
+    @clash_logs.command(name="show")
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_logs_show(self, ctx):
+        """Show current logging settings."""
+        log_channel_id = await self.config.guild(ctx.guild).log_channel()
+        clan_tag = await self.config.guild(ctx.guild).clan_tag()
+        log_channel = ctx.guild.get_channel(log_channel_id) if log_channel_id else None
+        await ctx.send(
+            f"Logging channel: {log_channel.mention if log_channel else 'Not set'}\n"
+            f"Clan tag: {clan_tag or 'Not set'}"
+        )
 
     @clash.group(name="profile")
     async def clash_profile(self, ctx):
@@ -113,17 +144,13 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 with Image.open(BytesIO(data)) as img:
                     img = img.convert("RGBA").resize((32, 32))
                     pixels = list(img.getdata())
-                    # Remove fully transparent pixels
                     pixels = [p for p in pixels if p[3] > 0]
                     if not pixels:
                         return None
-                    # Find the pixel with the highest "richness" (brightness and saturation)
                     def color_richness(p):
                         r, g, b, a = p
-                        # Convert to HSV to get brightness and saturation
                         import colorsys
                         h, s, v = colorsys.rgb_to_hsv(r/255, g/255, b/255)
-                        # Richness: prioritize value (brightness) and saturation
                         return v * 0.7 + s * 0.3
                     brightest = max(pixels, key=color_richness)
                     return discord.Color.from_rgb(brightest[0], brightest[1], brightest[2])
@@ -135,7 +162,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
             return
 
-        # Determine which user to check
         target_user = user or ctx.author
         user_tag = await self.config.user(target_user).tag()
         verified = await self.config.user(target_user).verified()
@@ -444,7 +470,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
             return
 
-        # Determine which user to check
         target_user = user or ctx.author
         user_tag = await self.config.user(target_user).tag()
         verified = await self.config.user(target_user).verified()
@@ -484,7 +509,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                 value_lines = []
                 if info:
                     value_lines.append(info)
-                # Replace the "level" number (stars) with star emojis
                 star_emojis = "⭐" * stars if stars > 0 else "✩"
                 value_lines.append(f"-# {star_emojis}")
                 if value >= target:
@@ -500,7 +524,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             embed.set_footer(text=f"Page {page+1}/{total_pages} • {len(achievements)} achievements total")
             return embed
 
-        # Emoji navigation
         LEFT_EMOJI = "⬅️"
         CLOSE_EMOJI = "❌"
         RIGHT_EMOJI = "➡️"
@@ -557,7 +580,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
             return
 
-        # Determine which user to check
         target_user = user or ctx.author
         user_tag = await self.config.user(target_user).tag()
         verified = await self.config.user(target_user).verified()
@@ -586,7 +608,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
         troop_lines = []
         for troop in troops:
             troop_lines.append(f"{troop.get('name', 'Unknown')}: {troop.get('level', 0)}/{troop.get('maxLevel', 0)} ({troop.get('village', '')})")
-        # Discord embed field value max length is 1024
         for i in range(0, len(troop_lines), 20):
             embed.add_field(
                 name=f"Troops {i+1}-{min(i+20, len(troop_lines))}",
@@ -597,13 +618,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
     @clash_profile.command(name="heroes")
     async def clash_profile_heroes(self, ctx, user: discord.User = None):
-        """See player heroes and equipped/unequipped hero equipment in a detailed format."""
+        # (Unchanged from original code)
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
             return
 
-        # Determine which user to check
         target_user = user or ctx.author
         user_tag = await self.config.user(target_user).tag()
         verified = await self.config.user(target_user).verified()
@@ -627,14 +647,12 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("No heroes found for this player.")
             return
 
-        # Gather all equipped equipment (by name) for easy lookup
         equipped_names = set()
         for hero in heroes:
             for eq in hero.get("equipment", []):
                 if eq.get("name"):
                     equipped_names.add(eq["name"])
 
-        # Prepare embed for heroes and their equipped equipment
         embed_heroes = discord.Embed(
             title=f"Heroes for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
             color=discord.Color.purple()
@@ -655,7 +673,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             else:
                 eq_str = "None"
             value = f"-# Level {hero_level}/{hero_max}\n{eq_str}"
-            # Discord embed field value max length is 1024, so truncate if needed
             if len(value) > 1024:
                 value = value[:1021] + "..."
             embed_heroes.add_field(
@@ -666,7 +683,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
 
         await ctx.send(embed=embed_heroes)
 
-        # Prepare embed for unequipped hero equipment
         if hero_equipment:
             unequipped = [
                 eq for eq in hero_equipment
@@ -677,13 +693,11 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
                     title=f"Spare equipment for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
                     color=discord.Color.purple()
                 )
-                # Style each unequipped equipment like equipped: name, then -# Level x/y
                 eq_lines = []
                 for eq in unequipped:
                     eq_lines.append(
                         f"- {eq.get('name', 'Unknown')}\n-# Level {eq.get('level', 0)}/{eq.get('maxLevel', 0)}"
                     )
-                # Discord embed field value max length is 1024, so chunk if needed
                 for i in range(0, len(eq_lines), 10):
                     chunk = eq_lines[i:i+10]
                     value = "\n".join(chunk)
@@ -718,7 +732,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
             return
 
-        # Determine which user to check
         target_user = user or ctx.author
         user_tag = await self.config.user(target_user).tag()
         verified = await self.config.user(target_user).verified()
@@ -740,7 +753,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             await ctx.send("No spells found for this player.")
             return
 
-        # Prepare embed for spells, formatting like heroes (one field per spell, with level/maxLevel)
         embed_spells = discord.Embed(
             title=f"Spells for {player.get('name', 'Unknown')} ({player.get('tag', tag)})",
             color=discord.Color.teal()
@@ -751,7 +763,6 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             spell_level = spell.get("level", 0)
             spell_max = spell.get("maxLevel", 0)
             value = f"-# Level {spell_level}/{spell_max}"
-            # Discord embed field value max length is 1024, so truncate if needed
             if len(value) > 1024:
                 value = value[:1021] + "..."
             embed_spells.add_field(
@@ -761,4 +772,149 @@ class ClashProfile(commands.Cog):  # Inherit from Red's commands.Cog
             )
 
         await ctx.send(embed=embed_spells)
+
+    # --- LOGGING BACKGROUND TASK ---
+
+    async def _log_loop(self):
+        await self.bot.wait_until_ready()
+        while True:
+            try:
+                await self._check_and_log_updates()
+            except Exception as e:
+                # You may want to log this exception
+                pass
+            await asyncio.sleep(420)  # 7 minutes
+
+    async def _check_and_log_updates(self):
+        dev_api_key = await self.get_dev_api_key()
+        if not dev_api_key:
+            return
+
+        # For each guild with logging enabled
+        for guild in self.bot.guilds:
+            try:
+                log_channel_id = await self.config.guild(guild).log_channel()
+                clan_tag = await self.config.guild(guild).clan_tag()
+                if not log_channel_id or not clan_tag:
+                    continue
+                log_channel = guild.get_channel(log_channel_id)
+                if not log_channel:
+                    continue
+
+                # For each member in the guild
+                for member in guild.members:
+                    if member.bot:
+                        continue
+                    user_tag = await self.config.user(member).tag()
+                    verified = await self.config.user(member).verified()
+                    if not user_tag or not verified:
+                        continue
+
+                    # Fetch player data
+                    player = await self.fetch_player_data(user_tag, dev_api_key)
+                    if not player:
+                        continue
+
+                    # Check if player is in the correct clan
+                    player_clan = player.get("clan", {}).get("tag", "").upper()
+                    if player_clan != clan_tag.upper():
+                        continue
+
+                    # Get last profile snapshot
+                    last_profile = await self.config.user(member).last_profile()
+                    # Compare and log changes
+                    changes = self._detect_profile_changes(last_profile, player)
+                    if changes:
+                        embed = self._build_log_embed(member, player, changes)
+                        try:
+                            await log_channel.send(embed=embed)
+                        except Exception:
+                            pass
+                        # Update last_profile
+                        await self.config.user(member).last_profile.set(player)
+                    elif last_profile is None:
+                        # First time, just store snapshot
+                        await self.config.user(member).last_profile.set(player)
+            except Exception:
+                continue
+
+    def _detect_profile_changes(self, old, new):
+        """Return a list of change strings if anything interesting changed."""
+        if not old:
+            return []
+        changes = []
+        # Attack wins
+        if old.get("attackWins") != new.get("attackWins"):
+            diff = new.get("attackWins", 0) - old.get("attackWins", 0)
+            if diff > 0:
+                changes.append(f"🏆 Won {diff} attack{'s' if diff > 1 else ''} (now {new.get('attackWins')})")
+        # Defense wins
+        if old.get("defenseWins") != new.get("defenseWins"):
+            diff = new.get("defenseWins", 0) - old.get("defenseWins", 0)
+            if diff > 0:
+                changes.append(f"🛡️ Won {diff} defense{'s' if diff > 1 else ''} (now {new.get('defenseWins')})")
+        # League change
+        old_league = old.get("league", {}).get("name") if old.get("league") else None
+        new_league = new.get("league", {}).get("name") if new.get("league") else None
+        if old_league != new_league:
+            if old_league and new_league:
+                changes.append(f"🏅 Changed league: **{old_league}** → **{new_league}**")
+            elif new_league:
+                changes.append(f"🏅 Entered league: **{new_league}**")
+            elif old_league:
+                changes.append(f"🏅 Left league: **{old_league}**")
+        # Trophies
+        if old.get("trophies") != new.get("trophies"):
+            diff = new.get("trophies", 0) - old.get("trophies", 0)
+            if diff > 0:
+                changes.append(f"📈 Gained {diff} trophies (now {new.get('trophies')})")
+            elif diff < 0:
+                changes.append(f"📉 Lost {abs(diff)} trophies (now {new.get('trophies')})")
+        # Donations
+        if old.get("donations") != new.get("donations"):
+            diff = new.get("donations", 0) - old.get("donations", 0)
+            if diff > 0:
+                changes.append(f"📤 Donated {diff} troop{'s' if diff > 1 else ''} (now {new.get('donations')})")
+        # Donations received
+        if old.get("donationsReceived") != new.get("donationsReceived"):
+            diff = new.get("donationsReceived", 0) - old.get("donationsReceived", 0)
+            if diff > 0:
+                changes.append(f"📥 Received {diff} troop{'s' if diff > 1 else ''} (now {new.get('donationsReceived')})")
+        # War stars
+        if old.get("warStars") != new.get("warStars"):
+            diff = new.get("warStars", 0) - old.get("warStars", 0)
+            if diff > 0:
+                changes.append(f"⭐ Gained {diff} war star{'s' if diff > 1 else ''} (now {new.get('warStars')})")
+        # Clan capital contributions
+        if old.get("clanCapitalContributions") != new.get("clanCapitalContributions"):
+            diff = new.get("clanCapitalContributions", 0) - old.get("clanCapitalContributions", 0)
+            if diff > 0:
+                changes.append(f"🏛️ Contributed {diff} to clan capital (now {new.get('clanCapitalContributions')})")
+        # Town Hall level
+        if old.get("townHallLevel") != new.get("townHallLevel"):
+            changes.append(f"🏰 Town Hall upgraded: {old.get('townHallLevel')} → {new.get('townHallLevel')}")
+        # Builder Hall level
+        if old.get("builderHallLevel") != new.get("builderHallLevel"):
+            changes.append(f"🏚️ Builder Hall upgraded: {old.get('builderHallLevel')} → {new.get('builderHallLevel')}")
+        # Name change
+        if old.get("name") != new.get("name"):
+            changes.append(f"📝 Changed name: **{old.get('name')}** → **{new.get('name')}**")
+        return changes
+
+    def _build_log_embed(self, member, player, changes):
+        embed = discord.Embed(
+            title=f"{player.get('name', 'Unknown')} ({player.get('tag', '')})",
+            description="\n".join(changes),
+            color=discord.Color.green()
+        )
+        embed.set_footer(text=f"User: {member} ({member.id})")
+        if player.get("league"):
+            league_icon = player["league"].get("iconUrls", {}).get("medium")
+            if league_icon:
+                embed.set_thumbnail(url=league_icon)
+        elif player.get("clan"):
+            clan_icon = player["clan"].get("badgeUrls", {}).get("medium")
+            if clan_icon:
+                embed.set_thumbnail(url=clan_icon)
+        return embed
 
