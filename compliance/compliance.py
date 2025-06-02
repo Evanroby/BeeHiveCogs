@@ -122,7 +122,7 @@ class ComplianceManager(commands.Cog):
                 left_guilds.append((guild, "too small"))
         if left_guilds and log_channel:
             embed = discord.Embed(
-                title="Compliance Enforcement: Left Guilds",
+                title="Compliance enforcement",
                 color=discord.Color.orange(),
                 description="The bot has left the following guilds due to compliance enforcement."
             )
