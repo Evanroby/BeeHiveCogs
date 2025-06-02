@@ -310,13 +310,15 @@ class ComplianceManager(commands.Cog):
             "manage_webhooks",
             "manage_nicknames",
             "manage_emojis_and_stickers",
-            "manage_events",  # missing: allows managing guild scheduled events
-            "manage_threads", # missing: allows managing threads
-            "moderate_members", # missing: allows timing out members (timeout feature)
+            "manage_events",  # allows managing guild scheduled events
+            "manage_threads", # allows managing threads
+            "moderate_members", # allows timing out members (timeout feature)
         ]
 
         staff_members = []
         for member in guild.members:
+            if member.bot:
+                continue  # Ignore bots
             perms: discord.Permissions = member.guild_permissions
             if any(getattr(perms, perm, False) for perm in staff_perms):
                 staff_members.append(member)
@@ -325,13 +327,42 @@ class ComplianceManager(commands.Cog):
             await ctx.send("No staff members found with staff-level permissions in this guild.")
             return
 
+        # Prepare embed(s)
+        embed_title = f"Staff Members in {guild.name} ({guild.id})"
+        embed_color = discord.Color.blurple()
+        max_field_length = 1024  # Discord embed field value max length
+
+        # Build lines for each staff member
         lines = []
         for m in staff_members:
             perms = m.guild_permissions
             perms_list = [perm.replace("_", " ").title() for perm in staff_perms if getattr(perms, perm, False)]
-            lines.append(f"{m} ({m.id}) - {', '.join(perms_list)}")
+            lines.append(f"{m.mention} (`{m.id}`)\n• " + ", ".join(perms_list))
 
-        # Paginate if too long
-        for page in pagify("\n".join(lines), delims=["\n"], page_length=1900):
-            await ctx.send(box(page, lang="md"))
+        # Paginate lines into embed fields if needed
+        pages = []
+        current_page = []
+        current_length = 0
+        for line in lines:
+            if current_length + len(line) + 1 > max_field_length and current_page:
+                pages.append(current_page)
+                current_page = []
+                current_length = 0
+            current_page.append(line)
+            current_length += len(line) + 1
+        if current_page:
+            pages.append(current_page)
+
+        for idx, page_lines in enumerate(pages, 1):
+            embed = discord.Embed(
+                title=embed_title + (f" (Page {idx}/{len(pages)})" if len(pages) > 1 else ""),
+                color=embed_color,
+                description="-# Staff are members with any of: Administrator, Manage Guild, Manage Roles, Kick Members, Ban Members, Manage Channels, Manage Messages, Manage Webhooks, Manage Nicknames, Manage Emojis and Stickers, Manage Events, Manage Threads, Moderate Members."
+            )
+            embed.add_field(
+                name="Staff Members",
+                value="\n\n".join(page_lines),
+                inline=False
+            )
+            await ctx.send(embed=embed)
 
