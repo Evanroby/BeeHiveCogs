@@ -403,6 +403,7 @@ class ComplianceManager(commands.Cog):
     async def compliance_guild_info(self, ctx, guild_id: int):
         """
         Fetch information about any server the bot is in by guild ID.
+        If able, generate an invite for the server and attach it as a discord URL button.
         """
         guild = self.bot.get_guild(guild_id)
         if not guild:
@@ -452,7 +453,37 @@ class ComplianceManager(commands.Cog):
                 value=channel_list if len(channel_list) < 1024 else "Too many channels to display.",
                 inline=False
             )
-        await ctx.send(embed=embed)
+
+        # Try to generate an invite and attach as a button
+        invite_url = None
+        try:
+            # Find a text channel where the bot can create an invite
+            for channel in guild.text_channels:
+                perms = channel.permissions_for(guild.me)
+                if perms.create_instant_invite:
+                    invite = await channel.create_invite(max_age=300, max_uses=1, unique=True, reason="Compliance review")
+                    invite_url = invite.url
+                    break
+        except Exception as e:
+            invite_url = None  # Could not create invite
+
+        # If discord.py 2.x+ is available, use View/Button, else fallback to just sending the URL
+        try:
+            import discord.ui
+
+            class InviteView(discord.ui.View):
+                def __init__(self, url):
+                    super().__init__()
+                    if url:
+                        self.add_item(discord.ui.Button(label="Server Invite", url=url, style=discord.ButtonStyle.link))
+
+            view = InviteView(invite_url) if invite_url else None
+            await ctx.send(embed=embed, view=view)
+        except Exception:
+            # Fallback: just send the invite URL as a message if unable to use View/Button
+            await ctx.send(embed=embed)
+            if invite_url:
+                await ctx.send(f"Server Invite: {invite_url}")
 
     @compliance.command(name="staff")
     @checks.is_owner()
