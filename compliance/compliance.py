@@ -2,7 +2,7 @@ import discord
 from red_commons.logging import getLogger
 from redbot.core import commands, Config, checks, app_commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import box, humanize_list
+from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 
 log = getLogger("red.beehive.compliance")
 
@@ -285,4 +285,50 @@ class ComplianceManager(commands.Cog):
                 inline=False
             )
         await ctx.send(embed=embed)
+
+    @compliance.command(name="staff")
+    @checks.is_owner()
+    async def compliance_guild_staff(self, ctx, guild_id: int):
+        """
+        Fetch all staff of a server by guild ID, based on staff-level permissions.
+        Staff are members with any of: Administrator, Manage Guild, Manage Roles, Kick Members, Ban Members, Manage Channels, Manage Messages, Manage Webhooks, Manage Nicknames, Manage Emojis and Stickers.
+        """
+        guild = self.bot.get_guild(guild_id)
+        if not guild:
+            await ctx.send(f"❌ I am not in a guild with ID `{guild_id}`.")
+            return
+
+        # Define staff-level permissions to check
+        staff_perms = [
+            "administrator",
+            "manage_guild",
+            "manage_roles",
+            "kick_members",
+            "ban_members",
+            "manage_channels",
+            "manage_messages",
+            "manage_webhooks",
+            "manage_nicknames",
+            "manage_emojis_and_stickers",
+        ]
+
+        staff_members = []
+        for member in guild.members:
+            perms: discord.Permissions = member.guild_permissions
+            if any(getattr(perms, perm, False) for perm in staff_perms):
+                staff_members.append(member)
+
+        if not staff_members:
+            await ctx.send("No staff members found with staff-level permissions in this guild.")
+            return
+
+        lines = []
+        for m in staff_members:
+            perms = m.guild_permissions
+            perms_list = [perm.replace("_", " ").title() for perm in staff_perms if getattr(perms, perm, False)]
+            lines.append(f"{m} ({m.id}) - {', '.join(perms_list)}")
+
+        # Paginate if too long
+        for page in pagify("\n".join(lines), delims=["\n"], page_length=1900):
+            await ctx.send(box(page, lang="md"))
 
