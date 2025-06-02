@@ -22,6 +22,7 @@ class ComplianceManager(commands.Cog):
         default_global = {
             "allowed_guilds": [],
             "blocked_guilds": [],
+            "blocked_guild_reasons": {},  # {guild_id: reason}
             "min_member_count": 0,
             "requirements_enabled": False,
             "enforcement_interval": 3600,  # seconds
@@ -60,9 +61,13 @@ class ComplianceManager(commands.Cog):
             # Attempt to DM the inviter/owner
             if inviter:
                 try:
+                    # Try to include the block reason if available
+                    blocked_reasons = await self.config.blocked_guild_reasons()
+                    reason = blocked_reasons.get(str(guild.id))
+                    reason_text = f"\n\n**Blocked for:** {reason}" if reason else ""
                     await inviter.send(
                         f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
-                        f"Unfortunately, this server is currently on the compliance blocklist and I am unable to remain here or provide any features.\n"
+                        f"Unfortunately, this server is currently on the compliance blocklist and I am unable to remain here or provide any features.{reason_text}\n"
                         f"If you believe this is a mistake, please contact the bot owner."
                     )
                 except Exception as e:
@@ -155,21 +160,32 @@ class ComplianceManager(commands.Cog):
 
     @compliance.command(name="block")
     @checks.is_owner()
-    async def compliance_toggle_blocked(self, ctx, guild_id: int):
+    async def compliance_toggle_blocked(self, ctx, guild_id: int, *, reason: str = None):
         """
         Toggle a guild in the blocked list.
-        If the guild is in the blocked list, it will be removed.
-        If not, it will be added.
+        If the guild is in the blocked list, it will be removed (and its reason deleted).
+        If not, it will be added, and you may provide a reason (optional).
+        Example: [p]compliance block 1234567890 Spamming
         """
         blocked = await self.config.blocked_guilds()
+        blocked_reasons = await self.config.blocked_guild_reasons()
+        guild_id_str = str(guild_id)
         if guild_id in blocked:
             blocked.remove(guild_id)
             await self.config.blocked_guilds.set(blocked)
-            await ctx.send(f"❌ Guild `{guild_id}` removed from blocked list.")
+            if guild_id_str in blocked_reasons:
+                del blocked_reasons[guild_id_str]
+                await self.config.blocked_guild_reasons.set(blocked_reasons)
+            await ctx.send(f"❌ Guild `{guild_id}` removed from blocked list (and any block reason deleted).")
         else:
             blocked.append(guild_id)
             await self.config.blocked_guilds.set(blocked)
-            await ctx.send(f"✅ Guild `{guild_id}` added to blocked list.")
+            if reason:
+                blocked_reasons[guild_id_str] = reason
+                await self.config.blocked_guild_reasons.set(blocked_reasons)
+                await ctx.send(f"✅ Guild `{guild_id}` added to blocked list with reason: {reason}")
+            else:
+                await ctx.send(f"✅ Guild `{guild_id}` added to blocked list (no reason provided).")
 
     @compliance.command(name="minmembers")
     @checks.is_owner()
@@ -203,15 +219,30 @@ class ComplianceManager(commands.Cog):
         enabled = await self.config.requirements_enabled()
         allowed = await self.config.allowed_guilds()
         blocked = await self.config.blocked_guilds()
+        blocked_reasons = await self.config.blocked_guild_reasons()
         min_members = await self.config.min_member_count()
         interval = await self.config.enforcement_interval()
         log_channel_id = await self.config.log_channel()
         log_channel = ctx.guild.get_channel(log_channel_id) if log_channel_id else None
+
+        # Prepare blocked guilds with reasons
+        if blocked:
+            blocked_lines = []
+            for gid in blocked:
+                reason = blocked_reasons.get(str(gid))
+                if reason:
+                    blocked_lines.append(f"{gid} (Reason: {reason})")
+                else:
+                    blocked_lines.append(str(gid))
+            blocked_str = ", ".join(blocked_lines)
+        else:
+            blocked_str = "None"
+
         msg = (
             f"**Compliance Status**\n"
             f"Enabled: `{enabled}`\n"
             f"Allowed Guilds: {box(', '.join(str(i) for i in allowed) or 'None', lang='py')}\n"
-            f"Blocked Guilds: {box(', '.join(str(i) for i in blocked) or 'None', lang='py')}\n"
+            f"Blocked Guilds: {box(blocked_str, lang='py')}\n"
             f"Min Member Count: `{min_members}`\n"
             f"Enforcement Interval: `{interval}` seconds\n"
             f"Log Channel: {log_channel.mention if log_channel else 'Not set'}\n"
