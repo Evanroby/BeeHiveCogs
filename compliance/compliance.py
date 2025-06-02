@@ -310,6 +310,9 @@ class ComplianceManager(commands.Cog):
             "manage_webhooks",
             "manage_nicknames",
             "manage_emojis_and_stickers",
+            "manage_events",  # missing: allows managing guild scheduled events
+            "manage_threads", # missing: allows managing threads
+            "moderate_members", # missing: allows timing out members (timeout feature)
         ]
 
         staff_members = []
