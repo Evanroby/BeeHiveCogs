@@ -118,6 +118,19 @@ class ClashProfile(commands.Cog):
                     return None
                 return await resp.json()
 
+    async def fetch_clan_current_war(self, tag: str, dev_api_key: str):
+        tag = tag.replace("#", "").upper()
+        url = f"https://api.clashofclans.com/v1/clans/%23{tag}/currentwar"
+        headers = {
+            "Authorization": f"Bearer {dev_api_key}",
+            "Accept": "application/json"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status != 200:
+                    return None
+                return await resp.json()
+
     @commands.group(name="clash")
     async def clash(self, ctx):
         """Clash of Clans commands."""
@@ -319,6 +332,205 @@ class ClashProfile(commands.Cog):
                 except Exception:
                     pass
                 break
+
+    @clash_clan.command(name="currentwar")
+    async def clash_clan_currentwar(self, ctx, user: discord.User = None):
+        """
+        Show the current war for your clan or another user's clan.
+
+        If no user is specified, shows your clan's current war.
+        """
+        dev_api_key = await self.get_dev_api_key()
+        if not dev_api_key:
+            await ctx.send("Developer API key is not set up. Please contact the bot owner.")
+            return
+
+        target_user = user or ctx.author
+        user_tag = await self.config.user(target_user).tag()
+        verified = await self.config.user(target_user).verified()
+        if not user_tag or not verified:
+            if user:
+                await ctx.send(f"{user.mention} has not linked and verified their Clash of Clans account.")
+            else:
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first.")
+            return
+
+        player = await self.fetch_player_data(user_tag, dev_api_key)
+        if not player:
+            await ctx.send("Could not fetch player data. Please check the tag and try again.")
+            return
+
+        clan = player.get("clan")
+        if not clan or not clan.get("tag"):
+            await ctx.send("This player is not in a clan.")
+            return
+
+        clan_tag = clan.get("tag")
+        clan_name = clan.get("name", "Unknown")
+        clan_badge = clan.get("badgeUrls", {}).get("medium")
+
+        # Fetch current war
+        war_data = await self.fetch_clan_current_war(clan_tag, dev_api_key)
+        if not war_data:
+            await ctx.send("Could not fetch current war. The clan may not be in a war or there was an error.")
+            return
+
+        state = war_data.get("state", "notInWar")
+        if state == "notInWar":
+            await ctx.send("This clan is not currently in a war.")
+            return
+        if war_data.get("reason") == "accessDenied":
+            await ctx.send("This clan's current war is private and cannot be accessed.")
+            return
+
+        # Parse war times
+        prep_start_time = war_data.get("preparationStartTime")
+        start_time = war_data.get("startTime")
+        end_time = war_data.get("endTime")
+        def parse_coc_time(ts):
+            if not ts:
+                return None
+            ts = ts.split(".")[0]
+            try:
+                return datetime.datetime.strptime(ts, "%Y%m%dT%H%M%S").replace(tzinfo=datetime.timezone.utc)
+            except Exception:
+                return None
+
+        prep_start_dt = parse_coc_time(prep_start_time)
+        start_dt = parse_coc_time(start_time)
+        end_dt = parse_coc_time(end_time)
+
+        def discord_ts(dt, fmt="R"):
+            if not dt:
+                return "Unknown"
+            return f"<t:{int(dt.timestamp())}:{fmt}>"
+
+        # War type
+        war_type = war_data.get("warType", "War")
+        team_size = war_data.get("teamSize", "?")
+        attacks_per_member = war_data.get("attacksPerMember", "?")
+
+        # Clan and opponent info
+        clan1 = war_data.get("clan", {})
+        clan2 = war_data.get("opponent", {})
+        clan1_name = clan1.get("name", "Unknown")
+        clan2_name = clan2.get("name", "Unknown")
+        clan1_tag = clan1.get("tag", "")
+        clan2_tag = clan2.get("tag", "")
+        clan1_stars = clan1.get("stars", "?")
+        clan2_stars = clan2.get("stars", "?")
+        clan1_destr = clan1.get("destructionPercentage", 0)
+        clan2_destr = clan2.get("destructionPercentage", 0)
+        clan1_badge = clan1.get("badgeUrls", {}).get("medium")
+        clan2_badge = clan2.get("badgeUrls", {}).get("medium")
+
+        # War state
+        state_map = {
+            "preparation": "Preparation",
+            "inWar": "In War",
+            "warEnded": "War Ended",
+            "notInWar": "Not in War"
+        }
+        state_str = state_map.get(state, state)
+
+        # Compose embed
+        embed = discord.Embed(
+            title=f"Current War: {clan1_name} vs {clan2_name}",
+            color=discord.Color.red() if state == "inWar" else discord.Color.orange()
+        )
+        if clan1_badge:
+            embed.set_thumbnail(url=clan1_badge)
+        embed.add_field(
+            name="War State",
+            value=f"-# **{state_str}**",
+            inline=True
+        )
+        embed.add_field(
+            name="War Type",
+            value=f"-# **{war_type}**",
+            inline=True
+        )
+        embed.add_field(
+            name="Team Size",
+            value=f"-# **{team_size}** (each member: {attacks_per_member} attacks)",
+            inline=True
+        )
+        if prep_start_dt:
+            embed.add_field(
+                name="Preparation Start",
+                value=f"-# {discord_ts(prep_start_dt, 'F')} ({discord_ts(prep_start_dt, 'R')})",
+                inline=True
+            )
+        if start_dt:
+            embed.add_field(
+                name="War Start",
+                value=f"-# {discord_ts(start_dt, 'F')} ({discord_ts(start_dt, 'R')})",
+                inline=True
+            )
+        if end_dt:
+            embed.add_field(
+                name="War End",
+                value=f"-# {discord_ts(end_dt, 'F')} ({discord_ts(end_dt, 'R')})",
+                inline=True
+            )
+
+        # Stars and destruction
+        embed.add_field(
+            name=f"{clan1_name} ({clan1_tag})",
+            value=f"-# **{clan1_stars} stars**\n-# **{clan1_destr}% destruction**",
+            inline=True
+        )
+        embed.add_field(
+            name=f"{clan2_name} ({clan2_tag})",
+            value=f"-# **{clan2_stars} stars**\n-# **{clan2_destr}% destruction**",
+            inline=True
+        )
+
+        # Optionally, show a summary of attacks left
+        if state in ("inWar", "warEnded"):
+            clan1_attacks = clan1.get("attacks", 0)
+            clan2_attacks = clan2.get("attacks", 0)
+            embed.add_field(
+                name="Attacks Used",
+                value=f"-# **{clan1_name}: {clan1_attacks}**\n-# **{clan2_name}: {clan2_attacks}**",
+                inline=False
+            )
+
+        # Optionally, show a few top performers (stars, destruction)
+        # Only if warEnded or inWar
+        if state in ("inWar", "warEnded"):
+            def get_top_members(members, key, top=3):
+                # key: "stars" or "destructionPercentage"
+                if not members:
+                    return []
+                return sorted(members, key=lambda m: m.get(key, 0), reverse=True)[:top]
+
+            clan1_members = war_data.get("clan", {}).get("members", [])
+            clan2_members = war_data.get("opponent", {}).get("members", [])
+            if clan1_members:
+                top_stars = get_top_members(clan1_members, "stars")
+                if top_stars:
+                    lines = []
+                    for m in top_stars:
+                        lines.append(f"-# {m.get('name', 'Unknown')}: {m.get('stars', 0)}⭐, {m.get('destructionPercentage', 0)}%")
+                    embed.add_field(
+                        name=f"Top {clan1_name} Members",
+                        value="\n".join(lines),
+                        inline=False
+                    )
+            if clan2_members:
+                top_stars = get_top_members(clan2_members, "stars")
+                if top_stars:
+                    lines = []
+                    for m in top_stars:
+                        lines.append(f"-# {m.get('name', 'Unknown')}: {m.get('stars', 0)}⭐, {m.get('destructionPercentage', 0)}%")
+                    embed.add_field(
+                        name=f"Top {clan2_name} Members",
+                        value="\n".join(lines),
+                        inline=False
+                    )
+
+        await ctx.send(embed=embed)
 
     @clash.group(name="logs")
     @commands.guild_only()
