@@ -133,18 +133,16 @@ class ClashProfile(commands.Cog):
 
     @commands.group(name="clash")
     async def clash(self, ctx):
-        """Clash of Clans commands."""
+        """Use Discord to interact with your Clash of Clans account."""
 
     @clash.group(name="clan")
     async def clash_clan(self, ctx):
-        """Clan-related commands."""
+        """Clan commands."""
 
-    @clash_clan.command(name="warlog")
+    @clash_clan.command(name="pastwar")
     async def clash_clan_warlog(self, ctx, user: discord.User = None):
         """
-        Show the clan warlog for your clan or another user's clan.
-
-        If no user is specified, shows your clan's warlog.
+        View the clan's war log
         """
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -336,9 +334,7 @@ class ClashProfile(commands.Cog):
     @clash_clan.command(name="currentwar")
     async def clash_clan_currentwar(self, ctx, user: discord.User = None):
         """
-        Show the current war for your clan or another user's clan.
-
-        If no user is specified, shows your clan's current war.
+        Show the current clan war active
         """
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -535,7 +531,7 @@ class ClashProfile(commands.Cog):
     @clash.group(name="logs")
     @commands.guild_only()
     async def clash_logs(self, ctx):
-        """Configure game logging settings."""
+        """Configure activity logging"""
 
     @clash_logs.command(name="channel")
     @checks.admin_or_permissions(manage_guild=True)
