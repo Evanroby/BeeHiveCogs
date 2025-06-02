@@ -535,23 +535,22 @@ class ClashProfile(commands.Cog):
         Configure activity logging
         
         The bot can automatically log clan member activity to a channel of your choice. Alerts will be sent when...
-        -# A player levels up
-        -# A player wins an attack
-        -# A player wins a defense
-        -# A player gains or loses trophies
-        -# A player unlocks or improves an achievement
-        -# A player is donated troops or spells
-        -# A player donates troops or spells to another player
-        -# Player builder hall upgrades
-        -# Player league changes
-        -# Player clan changes
-        -# Player clan wars
-        -# Player clan war attacks
-        -# Player clan war defenses
-        -# Player clan war stars
-        -# Player clan war town hall upgrades
-        -# Player clan war builder hall upgrades
         
+        -# A clan member levels up
+        -# A clan member wins an attack
+        -# A clan member wins a defense
+        -# A clan member gains or loses trophies
+        -# A clan member unlocks or improves an achievement
+        -# A clan member is donated troops or spells
+        -# A clan member donates troops or spells to another player
+        -# A clan member contributes Capital Gold
+        -# A clan member upgrades a troop
+        -# A clan member upgrades a spell
+        -# A clan member upgrades a hero
+        -# A clan member upgrades a hero's equipment
+        -# A clan member upgrades their town hall
+        -# A clan member upgrades their builder hall
+        -# A clan member changes their in-game name
 
         """
 
