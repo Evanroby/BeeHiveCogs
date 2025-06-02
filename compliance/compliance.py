@@ -299,6 +299,7 @@ class ComplianceManager(commands.Cog):
             return
 
         # Define staff-level permissions to check
+        # Expanded staff-level permissions to include additional relevant permissions.
         staff_perms = [
             "administrator",
             "manage_guild",
@@ -310,9 +311,16 @@ class ComplianceManager(commands.Cog):
             "manage_webhooks",
             "manage_nicknames",
             "manage_emojis_and_stickers",
-            "manage_events",  # allows managing guild scheduled events
-            "manage_threads", # allows managing threads
-            "moderate_members", # allows timing out members (timeout feature)
+            "manage_events",           # allows managing guild scheduled events
+            "manage_threads",          # allows managing threads
+            "moderate_members",        # allows timing out members (timeout feature)
+            "view_audit_log",          # can view audit log (often staff)
+            "manage_expressions",      # manage stickers (newer Discord permission)
+            "manage_guild_expressions",# manage emojis and stickers (newer Discord permission)
+            "deafen_members",          # can deafen members in voice
+            "move_members",            # can move members between voice channels
+            "mute_members",            # can mute members in voice
+            "priority_speaker",        # can use priority speaker in voice (sometimes staff)
         ]
 
         staff_members = []
