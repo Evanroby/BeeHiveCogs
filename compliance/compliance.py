@@ -1,4 +1,5 @@
 import discord
+import discord.ui
 from red_commons.logging import getLogger
 from redbot.core import commands, Config, checks, app_commands
 from redbot.core.bot import Red
@@ -469,8 +470,6 @@ class ComplianceManager(commands.Cog):
 
         # If discord.py 2.x+ is available, use View/Button, else fallback to just sending the URL
         try:
-            import discord.ui
-
             class InviteView(discord.ui.View):
                 def __init__(self, url):
                     super().__init__()
