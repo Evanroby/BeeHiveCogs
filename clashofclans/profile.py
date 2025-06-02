@@ -535,7 +535,7 @@ class ClashProfile(commands.Cog):
         Configure activity logging
         
         The bot can automatically log clan member activity to a channel of your choice. Alerts will be sent when...
-        
+
         -# A clan member levels up
         -# A clan member wins an attack
         -# A clan member wins a defense
@@ -551,6 +551,7 @@ class ClashProfile(commands.Cog):
         -# A clan member upgrades their town hall
         -# A clan member upgrades their builder hall
         -# A clan member changes their in-game name
+        -# A clan member changes their Clan War status
 
         """
 
@@ -1582,6 +1583,15 @@ class ClashProfile(commands.Cog):
         # Name change
         if old.get("name") != new.get("name"):
             changes.append(f"**📝 Changed name**\n-# **{old.get('name')}** → **{new.get('name')}**")
+        # War Preference (opted in/out of Clan Wars)
+        if old.get("warPreference") != new.get("warPreference"):
+            old_pref = old.get("warPreference")
+            new_pref = new.get("warPreference")
+            # The API returns "in" or "out"
+            pref_map = {"in": "Participating in Clan Wars", "out": "Not participating in Clan Wars"}
+            old_disp = pref_map.get(old_pref, old_pref or "Unknown")
+            new_disp = pref_map.get(new_pref, new_pref or "Unknown")
+            changes.append(f"**⚔️ Clan War election changed**\n-# **{old_disp} → {new_disp}**")
 
         # --- Achievement completion/upgrade events ---
         # Only if both old and new have achievements
