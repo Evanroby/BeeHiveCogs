@@ -211,10 +211,10 @@ class ComplianceManager(commands.Cog):
                 )
             await ctx.send(embed=embed)
 
-    @compliance.command(name="minmembers")
+    @compliance.command(name="minimum")
     @checks.is_owner()
     async def compliance_min_members(self, ctx, count: int):
-        """Set the minimum member count for a guild to be compliant."""
+        """Set a guild minimum member count"""
         await self.config.min_member_count.set(count)
         await ctx.send(f"✅ Minimum member count set to {count}.")
 
@@ -225,10 +225,10 @@ class ComplianceManager(commands.Cog):
         await self.config.enforcement_interval.set(seconds)
         await ctx.send(f"✅ Enforcement interval set to {seconds} seconds.")
 
-    @compliance.command(name="logchannel")
+    @compliance.command(name="logs")
     @checks.is_owner()
     async def compliance_set_logchannel(self, ctx, channel: discord.TextChannel = None):
-        """Set the channel for compliance logs. Omit to clear."""
+        """Set a compliance log channel"""
         if channel:
             await self.config.log_channel.set(channel.id)
             await ctx.send(f"✅ Log channel set to {channel.mention}.")
@@ -273,7 +273,7 @@ class ComplianceManager(commands.Cog):
         )
         await ctx.send(msg)
 
-    @compliance.command(name="listguilds")
+    @compliance.command(name="guilds")
     @checks.is_owner()
     async def compliance_list_guilds(self, ctx):
         """List all guilds the bot is currently in."""
@@ -290,7 +290,7 @@ class ComplianceManager(commands.Cog):
         await self.enforce_compliance()
         await ctx.send("✅ Compliance enforcement run complete.")
 
-    @compliance.command(name="guildinfo")
+    @compliance.command(name="guild")
     @checks.is_owner()
     async def compliance_guild_info(self, ctx, guild_id: int):
         """
