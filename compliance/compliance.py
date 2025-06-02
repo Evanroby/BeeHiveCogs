@@ -330,13 +330,13 @@ class ComplianceManager(commands.Cog):
                 value=", ".join(r.mention for r in top_roles),
                 inline=False
             )
-        # Show up to 5 text channels
+        # Show all text channels the bot can read
         text_channels = [c for c in guild.text_channels if c.permissions_for(guild.me).read_messages]
         if text_channels:
-            top_channels = text_channels[:5]
+            channel_list = ", ".join(f"#{c.name}" for c in text_channels)
             embed.add_field(
-                name="Text Channels",
-                value=", ".join(f"#{c.name}" for c in top_channels),
+                name=f"Text Channels ({len(text_channels)})",
+                value=channel_list if len(channel_list) < 1024 else "Too many channels to display.",
                 inline=False
             )
         await ctx.send(embed=embed)
