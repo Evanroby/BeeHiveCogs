@@ -93,53 +93,41 @@ class ComplianceManager(commands.Cog):
         await self.config.requirements_enabled.set(False)
         await ctx.send("❌ Compliance enforcement disabled.")
 
-    @compliance.command(name="addallowed")
+    @compliance.command(name="allow")
     @checks.is_owner()
-    async def compliance_add_allowed(self, ctx, guild_id: int):
-        """Add a guild to the allowed list."""
-        allowed = await self.config.allowed_guilds()
-        if guild_id not in allowed:
-            allowed.append(guild_id)
-            await self.config.allowed_guilds.set(allowed)
-            await ctx.send(f"✅ Guild `{guild_id}` added to allowed list.")
-        else:
-            await ctx.send("Guild already in allowed list.")
-
-    @compliance.command(name="removeallowed")
-    @checks.is_owner()
-    async def compliance_remove_allowed(self, ctx, guild_id: int):
-        """Remove a guild from the allowed list."""
+    async def compliance_toggle_allowed(self, ctx, guild_id: int):
+        """
+        Toggle a guild in the allowed list.
+        If the guild is in the allowed list, it will be removed.
+        If not, it will be added.
+        """
         allowed = await self.config.allowed_guilds()
         if guild_id in allowed:
             allowed.remove(guild_id)
             await self.config.allowed_guilds.set(allowed)
-            await ctx.send(f"✅ Guild `{guild_id}` removed from allowed list.")
+            await ctx.send(f"❌ Guild `{guild_id}` removed from allowed list.")
         else:
-            await ctx.send("Guild not in allowed list.")
+            allowed.append(guild_id)
+            await self.config.allowed_guilds.set(allowed)
+            await ctx.send(f"✅ Guild `{guild_id}` added to allowed list.")
 
-    @compliance.command(name="addblocked")
+    @compliance.command(name="block")
     @checks.is_owner()
-    async def compliance_add_blocked(self, ctx, guild_id: int):
-        """Add a guild to the blocked list."""
-        blocked = await self.config.blocked_guilds()
-        if guild_id not in blocked:
-            blocked.append(guild_id)
-            await self.config.blocked_guilds.set(blocked)
-            await ctx.send(f"✅ Guild `{guild_id}` added to blocked list.")
-        else:
-            await ctx.send("Guild already in blocked list.")
-
-    @compliance.command(name="removeblocked")
-    @checks.is_owner()
-    async def compliance_remove_blocked(self, ctx, guild_id: int):
-        """Remove a guild from the blocked list."""
+    async def compliance_toggle_blocked(self, ctx, guild_id: int):
+        """
+        Toggle a guild in the blocked list.
+        If the guild is in the blocked list, it will be removed.
+        If not, it will be added.
+        """
         blocked = await self.config.blocked_guilds()
         if guild_id in blocked:
             blocked.remove(guild_id)
             await self.config.blocked_guilds.set(blocked)
-            await ctx.send(f"✅ Guild `{guild_id}` removed from blocked list.")
+            await ctx.send(f"❌ Guild `{guild_id}` removed from blocked list.")
         else:
-            await ctx.send("Guild not in blocked list.")
+            blocked.append(guild_id)
+            await self.config.blocked_guilds.set(blocked)
+            await ctx.send(f"✅ Guild `{guild_id}` added to blocked list.")
 
     @compliance.command(name="minmembers")
     @checks.is_owner()
