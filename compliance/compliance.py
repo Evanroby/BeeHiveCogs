@@ -18,7 +18,7 @@ class ComplianceManager(commands.Cog):
 
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=0xBEEBEEBEE, force_registration=True)
+        self.config = Config.get_conf(self, identifier=111111111111111, force_registration=True)
         default_global = {
             "allowed_guilds": [],
             "blocked_guilds": [],
@@ -29,9 +29,51 @@ class ComplianceManager(commands.Cog):
         }
         self.config.register_global(**default_global)
         self._enforcement_task = bot.loop.create_task(self._enforce_loop())
+        bot.add_listener(self._on_guild_join, "on_guild_join")
 
     def cog_unload(self):
         self._enforcement_task.cancel()
+        self.bot.remove_listener(self._on_guild_join, "on_guild_join")
+
+    async def _on_guild_join(self, guild: discord.Guild):
+        """
+        When the bot joins a guild, check if it's on the blocklist.
+        If so, DM the inviter and leave the guild.
+        """
+        blocked = await self.config.blocked_guilds()
+        if guild.id in blocked:
+            inviter = None
+            # Try to get the inviter from the audit log (if permissions allow)
+            try:
+                # Only works if bot has 'View Audit Log' permission
+                async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.bot_add):
+                    if entry.target.id == self.bot.user.id:
+                        inviter = entry.user
+                        break
+            except Exception as e:
+                log.debug(f"Could not fetch audit log for guild {guild.id}: {e}")
+
+            # Fallback: try to DM the owner if inviter not found
+            if not inviter:
+                inviter = guild.owner
+
+            # Attempt to DM the inviter/owner
+            if inviter:
+                try:
+                    await inviter.send(
+                        f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
+                        f"Unfortunately, this server is currently on the compliance blocklist and I am unable to remain here or provide any features.\n"
+                        f"If you believe this is a mistake, please contact the bot owner."
+                    )
+                except Exception as e:
+                    log.debug(f"Could not DM inviter/owner ({inviter}) for blocked guild {guild.id}: {e}")
+
+            # Leave the guild
+            try:
+                await guild.leave()
+                log.info(f"Left blocked guild {guild.name} ({guild.id}) on join.")
+            except Exception as e:
+                log.error(f"Failed to leave blocked guild {guild.name} ({guild.id}): {e}")
 
     async def _enforce_loop(self):
         await self.bot.wait_until_ready()
