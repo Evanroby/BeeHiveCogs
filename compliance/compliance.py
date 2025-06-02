@@ -64,12 +64,18 @@ class ComplianceManager(commands.Cog):
                     # Try to include the block reason if available
                     blocked_reasons = await self.config.blocked_guild_reasons()
                     reason = blocked_reasons.get(str(guild.id))
-                    reason_text = f"\n\n**Blocked for:** {reason}" if reason else ""
-                    await inviter.send(
-                        f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
-                        f"Unfortunately, this server is currently on the compliance blocklist and I am unable to remain here or provide any features.{reason_text}\n"
-                        f"If you believe this is a mistake, please contact the bot owner."
+                    embed = discord.Embed(
+                        title="Compliance Block Notice",
+                        description=(
+                            f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
+                            f"Unfortunately, this server is currently on the compliance blocklist and I am unable to remain here or provide any features."
+                        ),
+                        color=discord.Color.red()
                     )
+                    if reason:
+                        embed.add_field(name="Blocked for", value=reason, inline=False)
+                    embed.set_footer(text="If you believe this is a mistake, please contact the bot owner.")
+                    await inviter.send(embed=embed)
                 except Exception as e:
                     log.debug(f"Could not DM inviter/owner ({inviter}) for blocked guild {guild.id}: {e}")
 
@@ -115,10 +121,18 @@ class ComplianceManager(commands.Cog):
                 await guild.leave()
                 left_guilds.append((guild, "too small"))
         if left_guilds and log_channel:
-            msg = "Compliance Enforcement: Left the following guilds:\n"
+            embed = discord.Embed(
+                title="Compliance Enforcement: Left Guilds",
+                color=discord.Color.orange(),
+                description="The bot has left the following guilds due to compliance enforcement."
+            )
             for g, reason in left_guilds:
-                msg += f"- {g.name} ({g.id}) [{reason}]\n"
-            await log_channel.send(box(msg, lang="md"))
+                embed.add_field(
+                    name=f"{g.name} ({g.id})",
+                    value=f"Reason: `{reason}`",
+                    inline=False
+                )
+            await log_channel.send(embed=embed)
 
     @commands.group(name="compliance", invoke_without_command=True)
     @checks.is_owner()
@@ -131,14 +145,24 @@ class ComplianceManager(commands.Cog):
     async def compliance_enable(self, ctx):
         """Enable compliance enforcement."""
         await self.config.requirements_enabled.set(True)
-        await ctx.send("✅ Compliance enforcement enabled.")
+        embed = discord.Embed(
+            title="Compliance Enforcement Enabled",
+            description="✅ Compliance enforcement has been enabled.",
+            color=discord.Color.green()
+        )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="disable")
     @checks.is_owner()
     async def compliance_disable(self, ctx):
         """Disable compliance enforcement."""
         await self.config.requirements_enabled.set(False)
-        await ctx.send("❌ Compliance enforcement disabled.")
+        embed = discord.Embed(
+            title="Compliance Enforcement Disabled",
+            description="❌ Compliance enforcement has been disabled.",
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="allow")
     @checks.is_owner()
@@ -152,11 +176,21 @@ class ComplianceManager(commands.Cog):
         if guild_id in allowed:
             allowed.remove(guild_id)
             await self.config.allowed_guilds.set(allowed)
-            await ctx.send(f"❌ Guild `{guild_id}` removed from allowed list.")
+            embed = discord.Embed(
+                title="Guild Removed from Allowed List",
+                description=f"❌ Guild `{guild_id}` removed from allowed list.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
         else:
             allowed.append(guild_id)
             await self.config.allowed_guilds.set(allowed)
-            await ctx.send(f"✅ Guild `{guild_id}` added to allowed list.")
+            embed = discord.Embed(
+                title="Guild Added to Allowed List",
+                description=f"✅ Guild `{guild_id}` added to allowed list.",
+                color=discord.Color.green()
+            )
+            await ctx.send(embed=embed)
 
     @compliance.command(name="block")
     @checks.is_owner()
@@ -216,14 +250,24 @@ class ComplianceManager(commands.Cog):
     async def compliance_min_members(self, ctx, count: int):
         """Set a guild minimum member count"""
         await self.config.min_member_count.set(count)
-        await ctx.send(f"✅ Minimum member count set to {count}.")
+        embed = discord.Embed(
+            title="Minimum Member Count Set",
+            description=f"✅ Minimum member count set to `{count}`.",
+            color=discord.Color.green()
+        )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="interval")
     @checks.is_owner()
     async def compliance_set_interval(self, ctx, seconds: int):
         """Set the enforcement interval in seconds."""
         await self.config.enforcement_interval.set(seconds)
-        await ctx.send(f"✅ Enforcement interval set to {seconds} seconds.")
+        embed = discord.Embed(
+            title="Enforcement Interval Set",
+            description=f"✅ Enforcement interval set to `{seconds}` seconds.",
+            color=discord.Color.green()
+        )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="logs")
     @checks.is_owner()
@@ -231,10 +275,20 @@ class ComplianceManager(commands.Cog):
         """Set a compliance log channel"""
         if channel:
             await self.config.log_channel.set(channel.id)
-            await ctx.send(f"✅ Log channel set to {channel.mention}.")
+            embed = discord.Embed(
+                title="Log Channel Set",
+                description=f"✅ Log channel set to {channel.mention}.",
+                color=discord.Color.green()
+            )
+            await ctx.send(embed=embed)
         else:
             await self.config.log_channel.set(None)
-            await ctx.send("✅ Log channel cleared.")
+            embed = discord.Embed(
+                title="Log Channel Cleared",
+                description="✅ Log channel cleared.",
+                color=discord.Color.orange()
+            )
+            await ctx.send(embed=embed)
 
     @compliance.command(name="status")
     @checks.is_owner()
@@ -262,16 +316,41 @@ class ComplianceManager(commands.Cog):
         else:
             blocked_str = "None"
 
-        msg = (
-            f"**Compliance Status**\n"
-            f"Enabled: `{enabled}`\n"
-            f"Allowed Guilds: {box(', '.join(str(i) for i in allowed) or 'None', lang='py')}\n"
-            f"Blocked Guilds: {box(blocked_str, lang='py')}\n"
-            f"Min Member Count: `{min_members}`\n"
-            f"Enforcement Interval: `{interval}` seconds\n"
-            f"Log Channel: {log_channel.mention if log_channel else 'Not set'}\n"
+        embed = discord.Embed(
+            title="Compliance Status",
+            color=discord.Color.blurple()
         )
-        await ctx.send(msg)
+        embed.add_field(
+            name="Enabled",
+            value=f"`{enabled}`",
+            inline=True
+        )
+        embed.add_field(
+            name="Min Member Count",
+            value=f"`{min_members}`",
+            inline=True
+        )
+        embed.add_field(
+            name="Enforcement Interval",
+            value=f"`{interval}` seconds",
+            inline=True
+        )
+        embed.add_field(
+            name="Log Channel",
+            value=log_channel.mention if log_channel else "Not set",
+            inline=True
+        )
+        embed.add_field(
+            name="Allowed Guilds",
+            value=(", ".join(str(i) for i in allowed) if allowed else "None"),
+            inline=False
+        )
+        embed.add_field(
+            name="Blocked Guilds",
+            value=blocked_str,
+            inline=False
+        )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="guilds")
     @checks.is_owner()
@@ -281,14 +360,43 @@ class ComplianceManager(commands.Cog):
         lines = []
         for g in guilds:
             lines.append(f"{g.name} ({g.id}) - {g.member_count} members")
-        await ctx.send(box("\n".join(lines), lang="md"))
+        # Paginate if needed
+        max_field_length = 1024
+        pages = []
+        current_page = []
+        current_length = 0
+        for line in lines:
+            if current_length + len(line) + 1 > max_field_length and current_page:
+                pages.append(current_page)
+                current_page = []
+                current_length = 0
+            current_page.append(line)
+            current_length += len(line) + 1
+        if current_page:
+            pages.append(current_page)
+        for idx, page_lines in enumerate(pages, 1):
+            embed = discord.Embed(
+                title=f"Guilds the Bot is In ({len(guilds)})" + (f" (Page {idx}/{len(pages)})" if len(pages) > 1 else ""),
+                color=discord.Color.blurple()
+            )
+            embed.add_field(
+                name="Guilds",
+                value="\n".join(page_lines),
+                inline=False
+            )
+            await ctx.send(embed=embed)
 
     @compliance.command(name="enforce")
     @checks.is_owner()
     async def compliance_enforce_now(self, ctx):
         """Run compliance enforcement immediately."""
         await self.enforce_compliance()
-        await ctx.send("✅ Compliance enforcement run complete.")
+        embed = discord.Embed(
+            title="Compliance Enforcement Run",
+            description="✅ Compliance enforcement run complete.",
+            color=discord.Color.green()
+        )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="guild")
     @checks.is_owner()
@@ -298,7 +406,12 @@ class ComplianceManager(commands.Cog):
         """
         guild = self.bot.get_guild(guild_id)
         if not guild:
-            await ctx.send(f"❌ I am not in a guild with ID `{guild_id}`.")
+            embed = discord.Embed(
+                title="Guild Not Found",
+                description=f"❌ I am not in a guild with ID `{guild_id}`.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
             return
 
         owner = guild.owner
@@ -308,17 +421,17 @@ class ComplianceManager(commands.Cog):
 
         embed = discord.Embed(
             title=f"{guild.name} ({guild.id})",
-            color=discord.Color.blurple(),
-            description=f"**Owner:** {owner} ({owner.id})\n"
-                        f"**Members:** {guild.member_count}\n"
-                        f"**Created:** {created_at}\n"
-                        f"**Region:** {getattr(guild, 'region', 'N/A')}\n"
-                        f"**Features:** {features}\n"
-                        f"**Verification Level:** {guild.verification_level.name}\n"
-                        f"**MFA Level:** {'Enabled' if guild.mfa_level else 'Disabled'}\n"
-                        f"**Partnered:** {'Yes' if 'PARTNERED' in guild.features else 'No'}\n"
-                        f"**Vanity URL:** {guild.vanity_url_code or 'None'}"
+            color=discord.Color.blurple()
         )
+        embed.add_field(name="Owner", value=f"{owner} ({owner.id})", inline=True)
+        embed.add_field(name="Members", value=f"{guild.member_count}", inline=True)
+        embed.add_field(name="Created", value=created_at, inline=True)
+        embed.add_field(name="Region", value=getattr(guild, 'region', 'N/A'), inline=True)
+        embed.add_field(name="Features", value=features, inline=False)
+        embed.add_field(name="Verification Level", value=guild.verification_level.name, inline=True)
+        embed.add_field(name="MFA Level", value='Enabled' if guild.mfa_level else 'Disabled', inline=True)
+        embed.add_field(name="Partnered", value='Yes' if 'PARTNERED' in guild.features else 'No', inline=True)
+        embed.add_field(name="Vanity URL", value=guild.vanity_url_code or 'None', inline=True)
         if icon_url:
             embed.set_thumbnail(url=icon_url)
         # Show up to 5 top roles (by position, excluding @everyone)
@@ -350,7 +463,12 @@ class ComplianceManager(commands.Cog):
         """
         guild = self.bot.get_guild(guild_id)
         if not guild:
-            await ctx.send(f"❌ I am not in a guild with ID `{guild_id}`.")
+            embed = discord.Embed(
+                title="Guild Not Found",
+                description=f"❌ I am not in a guild with ID `{guild_id}`.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
             return
 
         # Define staff-level permissions to check
@@ -387,7 +505,12 @@ class ComplianceManager(commands.Cog):
                 staff_members.append(member)
 
         if not staff_members:
-            await ctx.send("No staff members found with staff-level permissions in this guild.")
+            embed = discord.Embed(
+                title="No Staff Members Found",
+                description="No staff members found with staff-level permissions in this guild.",
+                color=discord.Color.orange()
+            )
+            await ctx.send(embed=embed)
             return
 
         # Prepare embed(s)
@@ -420,7 +543,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title=embed_title + (f" (Page {idx}/{len(pages)})" if len(pages) > 1 else ""),
                 color=embed_color,
-                description="-# Staff are members with any of: Administrator, Manage Guild, Manage Roles, Kick Members, Ban Members, Manage Channels, Manage Messages, Manage Webhooks, Manage Nicknames, Manage Emojis and Stickers, Manage Events, Manage Threads, Moderate Members."
+                description="Staff are members with any of: Administrator, Manage Guild, Manage Roles, Kick Members, Ban Members, Manage Channels, Manage Messages, Manage Webhooks, Manage Nicknames, Manage Emojis and Stickers, Manage Events, Manage Threads, Moderate Members."
             )
             embed.add_field(
                 name="Staff Members",
