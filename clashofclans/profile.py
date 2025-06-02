@@ -534,13 +534,14 @@ class ClashProfile(commands.Cog):
         """
         Configure activity logging
         
-        The bot can automatically log clan member activity to a channel of your choice.
-        Alerts will be sent to this channel when...
-        -# Account levels change
+        The bot can automatically log clan member activity to a channel of your choice. Alerts will be sent when...
+        -# A player levels up
         -# A player wins an attack
         -# A player wins a defense
         -# A player gains or loses trophies
-        -# Player town hall upgrades
+        -# A player unlocks or improves an achievement
+        -# A player is donated troops or spells
+        -# A player donates troops or spells to another player
         -# Player builder hall upgrades
         -# Player league changes
         -# Player clan changes
@@ -571,10 +572,10 @@ class ClashProfile(commands.Cog):
         await self.config.guild(ctx.guild).clan_tag.set(tag.upper())
         await ctx.send(f"✅ Clan tag for this server set to {tag.upper()}.")
 
-    @clash_logs.command(name="show")
+    @clash_logs.command(name="settings")
     @checks.admin_or_permissions(manage_guild=True)
     async def clash_logs_show(self, ctx):
-        """Show current logging settings."""
+        """Show current settings."""
         log_channel_id = await self.config.guild(ctx.guild).log_channel()
         clan_tag = await self.config.guild(ctx.guild).clan_tag()
         log_channel = ctx.guild.get_channel(log_channel_id) if log_channel_id else None
