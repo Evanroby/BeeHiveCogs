@@ -1,11 +1,11 @@
 {
     "author": ["adminelevation"],
-    "install_msg": "Thank you for installing the Chat Summary cog. Use `/chatsummary` to get a summary of recent chat activity.",
+    "install_msg": "Thank you for installing the Summarizer cog! Use `[p]summarizer` to access powerful AI-driven summaries of chat activity, news, moderation logs, and more.",
     "name": "summarizer",
-    "short": "Summarize chat activity for users.",
-    "description": "This cog provides a summary of chat activity in a server, allowing users to see recent messages and activity.",
-    "tags": ["chat", "summary", "activity", "discord"],
-    "requirements": ["aiohttp", "stripe", "colorthief"],
+    "short": "AI-powered summaries for chat, news, and moderation.",
+    "description": "Summarize chat activity, news stories, server info, and moderation logs using advanced AI models. Includes support for premium models, Stripe integration, and customizable summaries.",
+    "tags": ["summarizer", "news", "moderation", "ai", "openai", "stripe", "discord"],
+    "requirements": ["aiohttp", "stripe", "colorthief", "tiktoken"],
     "min_bot_version": "3.5.0",
     "hidden": false,
     "disabled": false
