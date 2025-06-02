@@ -173,19 +173,43 @@ class ComplianceManager(commands.Cog):
         if guild_id in blocked:
             blocked.remove(guild_id)
             await self.config.blocked_guilds.set(blocked)
+            embed = discord.Embed(
+                title="Guild compliance block removed",
+                description=f"❌ Guild `{guild_id}` removed from blocked list.",
+                color=discord.Color.red()
+            )
             if guild_id_str in blocked_reasons:
                 del blocked_reasons[guild_id_str]
                 await self.config.blocked_guild_reasons.set(blocked_reasons)
-            await ctx.send(f"❌ Guild `{guild_id}` removed from blocked list (and any block reason deleted).")
+                embed.add_field(
+                    name="Reason removed",
+                    value="Any block reason for this guild has been deleted.",
+                    inline=False
+                )
+            await ctx.send(embed=embed)
         else:
             blocked.append(guild_id)
             await self.config.blocked_guilds.set(blocked)
+            embed = discord.Embed(
+                title="Guild compliance block added",
+                description=f"Guild `{guild_id}` is now subject to a compliance block.",
+                color=discord.Color.green()
+            )
             if reason:
                 blocked_reasons[guild_id_str] = reason
                 await self.config.blocked_guild_reasons.set(blocked_reasons)
-                await ctx.send(f"✅ Guild `{guild_id}` added to blocked list with reason: {reason}")
+                embed.add_field(
+                    name="Blocked for",
+                    value=reason,
+                    inline=False
+                )
             else:
-                await ctx.send(f"✅ Guild `{guild_id}` added to blocked list (no reason provided).")
+                embed.add_field(
+                    name="Blocked for",
+                    value="No reason provided.",
+                    inline=False
+                )
+            await ctx.send(embed=embed)
 
     @compliance.command(name="minmembers")
     @checks.is_owner()
