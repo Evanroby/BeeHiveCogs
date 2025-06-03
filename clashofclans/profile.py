@@ -1672,14 +1672,14 @@ class ClashProfile(commands.Cog):
             if not old_ach:
                 # New achievement appeared (shouldn't happen, but just in case)
                 if new_ach.get("stars", 0) > 0:
-                    changes.append(f"**🎖️ New achievement unlocked: {ach_name}**\n-# {new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}")
+                    changes.append(f"### 🎖️ New achievement unlocked\n*{ach_name}*\n-# {new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}")
                 continue
             # If stars increased (achievement upgraded)
             old_stars = old_ach.get("stars", 0)
             new_stars = new_ach.get("stars", 0)
             if new_stars > old_stars:
                 changes.append(
-                    f"**🎖️ Achievement upgraded: {ach_name}**\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
+                    f"*### 🎖️ Achievement upgraded\n*{ach_name}*\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
                 )
             # If value increased and target reached (achievement completed at this level)
             old_value = old_ach.get("value", 0)
@@ -1688,7 +1688,7 @@ class ClashProfile(commands.Cog):
             if new_value >= target and old_value < target and new_stars == old_stars:
                 # Completed this achievement level (but not upgraded yet)
                 changes.append(
-                    f"**🎉 Achievement completed: {ach_name} ({new_stars}⭐)**\n-# {old_value} → {new_value}/{target}"
+                    f"### 🎉 Achievement completed\n*{ach_name}* ({new_stars}⭐)\n-# {old_value} → {new_value}/{target}"
                 )
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
@@ -1705,7 +1705,7 @@ class ClashProfile(commands.Cog):
                 old_level = old_item.get("level", 0)
                 new_level = new_item.get("level", 0)
                 if new_level > old_level:
-                    msg = f"**{emoji} {key_name} upgraded: {name}**\n-# **{old_level} → {new_level}**"
+                    msg = f"### {emoji} {key_name} upgraded\n*{name}*\n-# **{old_level} → {new_level}**"
                     if extra_fields:
                         for field, display in extra_fields:
                             old_val = old_item.get(field)
