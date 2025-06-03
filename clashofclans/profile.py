@@ -1774,7 +1774,7 @@ class ClashProfile(commands.Cog):
                 old_level = old_item.get("level", 0)
                 new_level = new_item.get("level", 0)
                 if new_level > old_level:
-                    msg = f"### {emoji} {key_name} upgraded\n*{name}*\n-# **{old_level} → {new_level}**"
+                    msg = f"### {emoji} {key_name} upgraded\n**{name}**\n-# **{old_level} → {new_level}**"
                     changes.append(msg)
 
         log_upgrade(
