@@ -1604,12 +1604,12 @@ class ClashProfile(commands.Cog):
         if old.get("attackWins") != new.get("attackWins"):
             diff = (new.get("attackWins") or 0) - (old.get("attackWins") or 0)
             if diff > 0:
-                changes.append(f"### 🏆 Won {diff} attack{'s' if diff > 1 else ''}\n-# **{new.get('attackWins')} won this season**")
+                changes.append(f"### 🏆 Won {diff} attack{'s' if diff > 1 else ''}\n-# **{new.get('attackWins')} successful attacks this season**")
         # Defense wins
         if old.get("defenseWins") != new.get("defenseWins"):
             diff = (new.get("defenseWins") or 0) - (old.get("defenseWins") or 0)
             if diff > 0:
-                changes.append(f"### 🛡️ Won {diff} defense{'s' if diff > 1 else ''}\n-# **{new.get('defenseWins')} won this season**")
+                changes.append(f"### 🛡️ Won {diff} defense{'s' if diff > 1 else ''}\n-# **{new.get('defenseWins')} successful defenses this season**")
         # League change
         old_league = old.get("league", {}).get("name") if old.get("league") else None
         new_league = new.get("league", {}).get("name") if new.get("league") else None
