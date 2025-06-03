@@ -1736,7 +1736,7 @@ class ClashProfile(commands.Cog):
             old_ach = old_achs.get(ach_name)
             if not old_ach:
                 if new_ach.get("stars", 0) > 0:
-                    changes.append(f"### 🎖️ New achievement unlocked\n**{ach_name}**\n-# {new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}")
+                    changes.append(f"### 🎖️ New achievement unlocked\n**{ach_name}**\n-# **{new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}**")
                 continue
             old_stars = old_ach.get("stars", 0)
             new_stars = new_ach.get("stars", 0)
@@ -1751,7 +1751,7 @@ class ClashProfile(commands.Cog):
             # Achievement completed (value reached target, but stars did not increase)
             if new_value >= target and old_value < target and new_stars == old_stars:
                 changes.append(
-                    f"### 🎉 Achievement completed\n**{ach_name}** ({new_stars}⭐)\n-# {old_value} → {new_value}/{target}"
+                    f"### 🎉 Achievement completed\n**{ach_name}** ({new_stars}⭐)\n-# **{old_value} → {new_value}/{target}**"
                 )
             # Achievement progress (value increased, but not completed or upgraded)
             if (
@@ -1760,7 +1760,7 @@ class ClashProfile(commands.Cog):
                 and new_stars == old_stars
             ):
                 changes.append(
-                    f"### ⏳ Achievement progress\n**{ach_name}**\n-# {old_value} → {new_value}/{target}"
+                    f"### ⏳ Achievement progress\n**{ach_name}**\n-# **{old_value} → {new_value}/{target}**"
                 )
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
