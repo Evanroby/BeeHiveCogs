@@ -1628,12 +1628,12 @@ class ClashProfile(commands.Cog):
         if old.get("donations") != new.get("donations"):
             diff = (new.get("donations") or 0) - (old.get("donations") or 0)
             if diff > 0:
-                changes.append(f"### 📤 Donated {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donations')} donations now**")
+                changes.append(f"### 📤 Donated {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donations')} donations sent this season**")
         # Donations received
         if old.get("donationsReceived") != new.get("donationsReceived"):
             diff = (new.get("donationsReceived") or 0) - (old.get("donationsReceived") or 0)
             if diff > 0:
-                changes.append(f"### 📥 Received {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donationsReceived')} donations received now**")
+                changes.append(f"### 📥 Received {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donationsReceived')} donations received this season**")
         # War stars
         if old.get("warStars") != new.get("warStars"):
             diff = (new.get("warStars") or 0) - (old.get("warStars") or 0)
