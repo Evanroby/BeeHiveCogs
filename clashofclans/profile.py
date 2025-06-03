@@ -1711,7 +1711,7 @@ class ClashProfile(commands.Cog):
                             old_val = old_item.get(field)
                             new_val = new_item.get(field)
                             if old_val != new_val and new_val is not None:
-                                msg += f"\n-# {display}: {old_val} → {new_val}"
+                                msg += f"\n-# **{display}: {old_val} → {new_val}**"
                     changes.append(msg)
 
         # Spells
