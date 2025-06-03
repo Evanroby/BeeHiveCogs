@@ -1487,7 +1487,7 @@ class ClashProfile(commands.Cog):
             except Exception as e:
                 # You may want to log this exception
                 pass
-            await asyncio.sleep(420)  # 7 minutes
+            await asyncio.sleep(300)  # 7 minutes
 
     async def _check_and_log_updates(self):
         dev_api_key = await self.get_dev_api_key()
