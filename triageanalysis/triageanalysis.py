@@ -384,7 +384,7 @@ class TriageAnalysis(commands.Cog):
                     f"**[Download sample]({tmpfiles_url})**\n\n"
                     f"By downloading, you accept all risk and responsibility. If you are not sure, do not proceed."
                 ),
-                color=discord.Color.red()
+                color=0xff4545
             )
             warning_embed.set_footer(text="If you are not sure, do not proceed.")
             try:

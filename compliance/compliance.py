@@ -65,7 +65,7 @@ class ComplianceManager(commands.Cog):
                             f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
                             f"Unfortunately, I am currently at my maximum allowed number of servers (`{max_guilds}`) and cannot remain in this server."
                         ),
-                        color=discord.Color.red()
+                        color=0xff4545
                     )
                     embed.set_footer(text="If you believe this is a mistake, please contact the bot owner.")
                     await inviter.send(embed=embed)
@@ -106,7 +106,7 @@ class ComplianceManager(commands.Cog):
                             f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
                             f"Unfortunately, this server is currently on the compliance blocklist and I am unable to remain here or provide any features."
                         ),
-                        color=discord.Color.red()
+                        color=0xff4545
                     )
                     if reason:
                         embed.add_field(name="Blocked for", value=reason, inline=False)
@@ -271,7 +271,7 @@ class ComplianceManager(commands.Cog):
         embed = discord.Embed(
             title="Compliance Enforcement Enabled",
             description="✅ Compliance enforcement has been enabled.",
-            color=discord.Color.green()
+            color=0x2bbd8e
         )
         await ctx.send(embed=embed)
 
@@ -283,7 +283,7 @@ class ComplianceManager(commands.Cog):
         embed = discord.Embed(
             title="Compliance Enforcement Disabled",
             description="❌ Compliance enforcement has been disabled.",
-            color=discord.Color.red()
+            color=0xff4545
         )
         await ctx.send(embed=embed)
 
@@ -302,7 +302,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Guild Removed from Allowed List",
                 description=f"❌ Guild `{guild_id}` removed from allowed list.",
-                color=discord.Color.red()
+                color=0xff4545
             )
             await ctx.send(embed=embed)
         else:
@@ -311,7 +311,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Guild Added to Allowed List",
                 description=f"✅ Guild `{guild_id}` added to allowed list.",
-                color=discord.Color.green()
+                color=0x2bbd8e
             )
             await ctx.send(embed=embed)
 
@@ -333,7 +333,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Guild compliance block removed",
                 description=f"❌ Guild `{guild_id}` removed from blocked list.",
-                color=discord.Color.red()
+                color=0xff4545
             )
             if guild_id_str in blocked_reasons:
                 del blocked_reasons[guild_id_str]
@@ -350,7 +350,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Guild compliance block added",
                 description=f"Guild `{guild_id}` is now subject to a compliance block.",
-                color=discord.Color.green()
+                color=0x2bbd8e
             )
             if reason:
                 blocked_reasons[guild_id_str] = reason
@@ -376,7 +376,7 @@ class ComplianceManager(commands.Cog):
         embed = discord.Embed(
             title="Minimum Member Count Set",
             description=f"✅ Minimum member count set to `{count}`.",
-            color=discord.Color.green()
+            color=0x2bbd8e
         )
         await ctx.send(embed=embed)
 
@@ -393,7 +393,7 @@ class ComplianceManager(commands.Cog):
             color = discord.Color.orange()
         else:
             desc = f"✅ Maximum guilds set to `{count}`."
-            color = discord.Color.green()
+            color = 0x2bbd8e
         embed = discord.Embed(
             title="Maximum Guilds Set",
             description=desc,
@@ -409,7 +409,7 @@ class ComplianceManager(commands.Cog):
         embed = discord.Embed(
             title="Enforcement Interval Set",
             description=f"✅ Enforcement interval set to `{seconds}` seconds.",
-            color=discord.Color.green()
+            color=0x2bbd8e
         )
         await ctx.send(embed=embed)
 
@@ -422,7 +422,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Log Channel Set",
                 description=f"✅ Log channel set to {channel.mention}.",
-                color=discord.Color.green()
+                color=0x2bbd8e
             )
             await ctx.send(embed=embed)
         else:
@@ -544,7 +544,7 @@ class ComplianceManager(commands.Cog):
         embed = discord.Embed(
             title="Compliance Enforcement Run",
             description="✅ Compliance enforcement run complete.",
-            color=discord.Color.green()
+            color=0x2bbd8e
         )
         await ctx.send(embed=embed)
 
@@ -560,7 +560,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Guild Not Found",
                 description=f"❌ I am not in a guild with ID `{guild_id}`.",
-                color=discord.Color.red()
+                color=0xff4545
             )
             await ctx.send(embed=embed)
             return
@@ -645,7 +645,7 @@ class ComplianceManager(commands.Cog):
             embed = discord.Embed(
                 title="Guild Not Found",
                 description=f"❌ I am not in a guild with ID `{guild_id}`.",
-                color=discord.Color.red()
+                color=0xff4545
             )
             await ctx.send(embed=embed)
             return

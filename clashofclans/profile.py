@@ -496,7 +496,7 @@ class ClashProfile(commands.Cog):
         # Compose embed
         embed = discord.Embed(
             title=f"Current War: {clan1_name} vs {clan2_name}",
-            color=discord.Color.red() if state == "inWar" else discord.Color.orange()
+            color=0xff4545 if state == "inWar" else discord.Color.orange()
         )
         if clan1_badge:
             embed.set_thumbnail(url=clan1_badge)
@@ -719,7 +719,7 @@ class ClashProfile(commands.Cog):
 
     @clash.group(name="player")
     async def clash_player(self, ctx):
-        """Profiles and user management"""
+        """Link accounts and view player information"""
 
     @clash_player.command(name="link")
     async def clash_player_link(self, ctx, tag: str, apikey: str):
@@ -745,11 +745,41 @@ class ClashProfile(commands.Cog):
         if verified:
             await self.config.user(ctx.author).tag.set(tag.upper())
             await self.config.user(ctx.author).verified.set(True)
-            await ctx.send(f"✅ Your Clash of Clans profile has been set and verified for tag {tag.upper()}!")
+            # Fetch the user's profile for personalization
+            player = await self.fetch_player_data(tag.upper(), dev_api_key)
+            if player:
+                player_name = player.get("name", "Unknown")
+                player_tag = player.get("tag", tag.upper())
+                league_icon = None
+                if player.get("league"):
+                    league_icon = player["league"].get("iconUrls", {}).get("medium")
+                elif player.get("clan"):
+                    league_icon = player["clan"].get("badgeUrls", {}).get("medium")
+                embed = discord.Embed(
+                    title="Authentication successful, you're all set!",
+                    description=f"Welcome back, **{player_name}**\nYour tag `{player_tag}` has been linked to this Discord account.\nYour roles will automatically sync shortly, please be patient.",
+                    color=0x2bbd8e
+                )
+                if league_icon:
+                    embed.set_thumbnail(url=league_icon)
+            else:
+                embed = discord.Embed(
+                    title="Authentication successful, you're all set!",
+                    description=f"Your Clash of Clans profile has been set and verified for tag **{tag.upper()}**!",
+                    color=0x2bbd8e
+                )
+            await ctx.send(embed=embed)
         else:
             await self.config.user(ctx.author).tag.set(None)
             await self.config.user(ctx.author).verified.set(False)
-            await ctx.send("❌ Verification failed. Please ensure your tag and API key are correct and try again. Remember, the API key is a one-time use token from the in-game settings.")
+            embed = discord.Embed(
+                title="We couldn't verify you own this account",
+                description=(
+                    "Please ensure your tag and key are correct, then try again."
+                ),
+                color=0xff4545
+            )
+            await ctx.send(embed=embed)
 
     @clash_player.command(name="about")
     async def clash_player_about(self, ctx, user: discord.User = None):
