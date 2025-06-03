@@ -1301,6 +1301,10 @@ class ClashProfile(commands.Cog):
 
     @clash_player.command(name="heroes")
     async def clash_player_heroes(self, ctx, user: discord.User = None):
+        """
+        View player heroes and levels
+        """
+        
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
