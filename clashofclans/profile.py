@@ -1657,11 +1657,26 @@ class ClashProfile(commands.Cog):
                                 for receiver, recv_diff in receivers
                             )
                         else:
-                            # If not all donations can be matched, show partial info
-                            donation_details = "\n".join(
-                                f"-# At least **{recv_diff}** troop{'s' if recv_diff > 1 else ''} sent to {receiver.mention}"
-                                for receiver, recv_diff in receivers
-                            )
+                            # If not all donations can be matched, show only the receivers that can be matched up to the diff
+                            sorted_receivers = sorted(receivers, key=lambda x: -x[1])
+                            running_total = 0
+                            partial_lines = []
+                            for receiver, recv_diff in sorted_receivers:
+                                if running_total + recv_diff > diff:
+                                    partial = diff - running_total
+                                    if partial > 0:
+                                        partial_lines.append(
+                                            f"-# At least **{partial}** troop{'s' if partial > 1 else ''} sent to {receiver.mention}"
+                                        )
+                                    break
+                                else:
+                                    partial_lines.append(
+                                        f"-# At least **{recv_diff}** troop{'s' if recv_diff > 1 else ''} sent to {receiver.mention}"
+                                    )
+                                    running_total += recv_diff
+                                    if running_total >= diff:
+                                        break
+                            donation_details = "\n".join(partial_lines)
                             donation_details += f"\n-# (Could not determine all recipients, total sent: {diff})"
                 if not donation_details:
                     donation_details = f"-# **{new.get('donations')} donations sent this season**"
@@ -1693,10 +1708,26 @@ class ClashProfile(commands.Cog):
                                 for sender, sent_diff in senders
                             )
                         else:
-                            received_details = "\n".join(
-                                f"-# At least **{sent_diff}** troop{'s' if sent_diff > 1 else ''} from {sender.mention}"
-                                for sender, sent_diff in senders
-                            )
+                            # Only show senders up to the diff, to avoid confusion
+                            sorted_senders = sorted(senders, key=lambda x: -x[1])
+                            running_total = 0
+                            partial_lines = []
+                            for sender, sent_diff in sorted_senders:
+                                if running_total + sent_diff > diff:
+                                    partial = diff - running_total
+                                    if partial > 0:
+                                        partial_lines.append(
+                                            f"-# At least **{partial}** troop{'s' if partial > 1 else ''} from {sender.mention}"
+                                        )
+                                    break
+                                else:
+                                    partial_lines.append(
+                                        f"-# At least **{sent_diff}** troop{'s' if sent_diff > 1 else ''} from {sender.mention}"
+                                    )
+                                    running_total += sent_diff
+                                    if running_total >= diff:
+                                        break
+                            received_details = "\n".join(partial_lines)
                             received_details += f"\n-# (Could not determine all senders, total received: {diff})"
                 if not received_details:
                     received_details = f"-# **{new.get('donationsReceived')} donations received this season**"
