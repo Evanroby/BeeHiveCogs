@@ -1591,7 +1591,7 @@ class ClashProfile(commands.Cog):
             pref_map = {"in": "Participating in Clan Wars", "out": "Not participating in Clan Wars"}
             old_disp = pref_map.get(old_pref, old_pref or "Unknown")
             new_disp = pref_map.get(new_pref, new_pref or "Unknown")
-            changes.append(f"**⚔️ Clan War election changed**\n-# **{old_disp} → {new_disp}**")
+            changes.append(f"### ⚔️ Clan War election changed\n-# **{old_disp} → {new_disp}**")
 
         # --- Achievement completion/upgrade events ---
         # Only if both old and new have achievements
