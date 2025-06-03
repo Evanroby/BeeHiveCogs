@@ -28,6 +28,7 @@ class ComplianceManager(commands.Cog):
             "requirements_enabled": False,
             "enforcement_interval": 3600,  # seconds
             "log_channel": None,
+            "max_guilds": 0,  # 0 means unlimited
         }
         self.config.register_global(**default_global)
         self._enforcement_task = bot.loop.create_task(self._enforce_loop())
@@ -39,10 +40,44 @@ class ComplianceManager(commands.Cog):
 
     async def _on_guild_join(self, guild: discord.Guild):
         """
-        When the bot joins a guild, check if it's on the blocklist.
+        When the bot joins a guild, check if it's on the blocklist or over max_guilds.
         If so, DM the inviter and leave the guild.
         """
         blocked = await self.config.blocked_guilds()
+        max_guilds = await self.config.max_guilds()
+        # Check if over max_guilds (if set and not 0)
+        if max_guilds and len(self.bot.guilds) > max_guilds:
+            inviter = None
+            try:
+                async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.bot_add):
+                    if entry.target.id == self.bot.user.id:
+                        inviter = entry.user
+                        break
+            except Exception as e:
+                log.debug(f"Could not fetch audit log for guild {guild.id}: {e}")
+            if not inviter:
+                inviter = guild.owner
+            if inviter:
+                try:
+                    embed = discord.Embed(
+                        title="There's currently a waitlist",
+                        description=(
+                            f"Hello! Thank you for inviting me to **{guild.name}**.\n\n"
+                            f"Unfortunately, I am currently at my maximum allowed number of servers (`{max_guilds}`) and cannot remain in this server."
+                        ),
+                        color=discord.Color.red()
+                    )
+                    embed.set_footer(text="If you believe this is a mistake, please contact the bot owner.")
+                    await inviter.send(embed=embed)
+                except Exception as e:
+                    log.debug(f"Could not DM inviter/owner ({inviter}) for max guilds {guild.id}: {e}")
+            try:
+                await guild.leave()
+                log.info(f"Left guild {guild.name} ({guild.id}) on join due to max_guilds limit.")
+            except Exception as e:
+                log.error(f"Failed to leave guild {guild.name} ({guild.id}) due to max_guilds: {e}")
+            return
+
         if guild.id in blocked:
             inviter = None
             # Try to get the inviter from the audit log (if permissions allow)
@@ -105,10 +140,12 @@ class ComplianceManager(commands.Cog):
         blocked = await self.config.blocked_guilds()
         min_members = await self.config.min_member_count()
         log_channel_id = await self.config.log_channel()
+        max_guilds = await self.config.max_guilds()
         log_channel = None
         if log_channel_id:
             log_channel = self.bot.get_channel(log_channel_id)
         left_guilds = []
+        # 1. Enforce blocklist, allowlist, min_members as before
         for guild in self.bot.guilds:
             if guild.id in blocked:
                 await guild.leave()
@@ -121,6 +158,18 @@ class ComplianceManager(commands.Cog):
             if min_members and guild.member_count < min_members:
                 await guild.leave()
                 left_guilds.append((guild, "too small"))
+        # 2. Enforce max_guilds (if set and not 0)
+        if max_guilds and len(self.bot.guilds) > max_guilds:
+            # Sort by join date (oldest first), so we leave the most recently joined
+            sorted_guilds = sorted(self.bot.guilds, key=lambda g: g.me.joined_at or 0, reverse=False)
+            # Keep the first max_guilds, leave the rest
+            to_leave = sorted_guilds[max_guilds:]
+            for guild in to_leave:
+                try:
+                    await guild.leave()
+                    left_guilds.append((guild, "over max_guilds"))
+                except Exception as e:
+                    log.error(f"Failed to leave guild {guild.name} ({guild.id}) due to max_guilds: {e}")
         if left_guilds and log_channel:
             embed = discord.Embed(
                 title="Compliance enforcement",
@@ -258,6 +307,27 @@ class ComplianceManager(commands.Cog):
         )
         await ctx.send(embed=embed)
 
+    @compliance.command(name="maxguilds")
+    @checks.is_owner()
+    async def compliance_set_max_guilds(self, ctx, count: int):
+        """
+        Set the maximum number of servers the bot can be in at once.
+        Set to 0 for unlimited.
+        """
+        await self.config.max_guilds.set(count)
+        if count == 0:
+            desc = "✅ Maximum guilds limit removed (unlimited)."
+            color = discord.Color.orange()
+        else:
+            desc = f"✅ Maximum guilds set to `{count}`."
+            color = discord.Color.green()
+        embed = discord.Embed(
+            title="Maximum Guilds Set",
+            description=desc,
+            color=color
+        )
+        await ctx.send(embed=embed)
+
     @compliance.command(name="interval")
     @checks.is_owner()
     async def compliance_set_interval(self, ctx, seconds: int):
@@ -302,6 +372,7 @@ class ComplianceManager(commands.Cog):
         min_members = await self.config.min_member_count()
         interval = await self.config.enforcement_interval()
         log_channel_id = await self.config.log_channel()
+        max_guilds = await self.config.max_guilds()
         log_channel = ctx.guild.get_channel(log_channel_id) if log_channel_id else None
 
         # Prepare blocked guilds with reasons
@@ -334,6 +405,11 @@ class ComplianceManager(commands.Cog):
         embed.add_field(
             name="Enforcement Interval",
             value=f"`{interval}` seconds",
+            inline=True
+        )
+        embed.add_field(
+            name="Max Guilds",
+            value=f"`{max_guilds}`" if max_guilds else "Unlimited",
             inline=True
         )
         embed.add_field(
