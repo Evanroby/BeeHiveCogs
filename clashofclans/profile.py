@@ -1729,7 +1729,7 @@ class ClashProfile(commands.Cog):
             new_disp = pref_map.get(new_pref, new_pref or "Unknown")
             changes.append(f"### ⚔️ Clan War election changed\n-# **{old_disp} → {new_disp}**")
 
-        # --- Achievement completion/upgrade events ---
+        # --- Achievement completion/upgrade/progress events ---
         old_achs = {a["name"]: a for a in old.get("achievements", []) if "name" in a}
         new_achs = {a["name"]: a for a in new.get("achievements", []) if "name" in a}
         for ach_name, new_ach in new_achs.items():
@@ -1740,16 +1740,27 @@ class ClashProfile(commands.Cog):
                 continue
             old_stars = old_ach.get("stars", 0)
             new_stars = new_ach.get("stars", 0)
+            old_value = old_ach.get("value", 0)
+            new_value = new_ach.get("value", 0)
+            target = new_ach.get("target", 0)
+            # Achievement upgraded (stars increased)
             if new_stars > old_stars:
                 changes.append(
                     f"### 🎖️ Achievement upgraded\n*{ach_name}*\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
                 )
-            old_value = old_ach.get("value", 0)
-            new_value = new_ach.get("value", 0)
-            target = new_ach.get("target", 0)
+            # Achievement completed (value reached target, but stars did not increase)
             if new_value >= target and old_value < target and new_stars == old_stars:
                 changes.append(
                     f"### 🎉 Achievement completed\n*{ach_name}* ({new_stars}⭐)\n-# {old_value} → {new_value}/{target}"
+                )
+            # Achievement progress (value increased, but not completed or upgraded)
+            if (
+                new_value > old_value
+                and (new_value < target or new_stars == old_stars)
+                and new_stars == old_stars
+            ):
+                changes.append(
+                    f"### ⏳ Achievement progress\n*{ach_name}* ({new_stars}⭐)\n-# {old_value} → {new_value}/{target}"
                 )
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
