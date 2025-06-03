@@ -1693,7 +1693,7 @@ class ClashProfile(commands.Cog):
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
         # Helper for logging upgrades
-        def log_upgrade(old_list, new_list, key_name, emoji, extra_fields=None):
+        def log_upgrade(old_list, new_list, key_name, emoji):
             # extra_fields: list of (field, display_name) to show in log
             old_map = {item["name"]: item for item in old_list if "name" in item}
             new_map = {item["name"]: item for item in new_list if "name" in item}
@@ -1734,9 +1734,8 @@ class ClashProfile(commands.Cog):
         log_upgrade(
             old.get("heroEquipment", []),
             new.get("heroEquipment", []),
-            "Hero Equipment",
+            "Hero equipment",
             "🛡️",
-            extra_fields=[("level", "Level"), ("quality", "Quality")]
         )
 
         return changes
