@@ -1235,17 +1235,8 @@ class ClashProfile(commands.Cog):
             await ctx.send("No troops found for this player.")
             return
 
-        # Group troops by village for better organization
-        troops_by_village = defaultdict(list)
-        for troop in troops:
-            village = troop.get('village', 'Unknown')
-            troops_by_village[village].append(troop)
-
-        # Flatten the grouped troops into a list of (village, troop) tuples for paging
-        troop_entries = []
-        for village, troop_list in troops_by_village.items():
-            for troop in troop_list:
-                troop_entries.append((village, troop))
+        # No longer group by village, just use the troops list directly
+        troop_entries = troops
 
         PAGE_SIZE = 9
         total_pages = max(1, math.ceil(len(troop_entries) / PAGE_SIZE))
@@ -1265,12 +1256,11 @@ class ClashProfile(commands.Cog):
             end = start + PAGE_SIZE
             page_entries = troop_entries[start:end]
 
-
             for troop in page_entries:
                 troop_name = troop.get("name", "Unknown")
                 troop_level = troop.get("level", 0)
                 troop_max = troop.get("maxLevel", 0)
-                value = f"-# Level {troop_level}/{troop_max}"
+                value = f"-# **Currently level {troop_level}/{troop_max}**"
                 if len(value) > 1024:
                     value = value[:1021] + "..."
                 field_name = f"{troop_name}"
