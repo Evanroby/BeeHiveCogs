@@ -1789,7 +1789,9 @@ class ClashProfile(commands.Cog):
             old_ach = old_achs.get(ach_name)
             if not old_ach:
                 if new_ach.get("stars", 0) > 0:
-                    changes.append(f"🎖️ New achievement unlocked|**{ach_name}**\n**{new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}**")
+                    # Show progress in the value
+                    progress = f"{new_ach.get('value', 0)}/{new_ach.get('target', 0)}"
+                    changes.append(f"🎖️ New achievement unlocked|**{ach_name}**\n**{new_ach.get('stars', 0)}⭐ {progress}**")
                 continue
             old_stars = old_ach.get("stars", 0)
             new_stars = new_ach.get("stars", 0)
@@ -1798,13 +1800,15 @@ class ClashProfile(commands.Cog):
             target = new_ach.get("target", 0)
             # Achievement upgraded (stars increased)
             if new_stars > old_stars:
+                progress = f"{new_ach.get('value', 0)}/{new_ach.get('target', 0)}"
                 changes.append(
-                    f"🎖️ Achievement upgraded|**{ach_name}**\nLv{old_stars} → Lv{new_stars}\n({new_ach.get('value', 0)}/{new_ach.get('target', 0)})"
+                    f"🎖️ Achievement upgraded|**{ach_name}**\nLv{old_stars} → Lv{new_stars}\n({progress})"
                 )
             # Achievement completed (value reached target, but stars did not increase)
             if new_value >= target and old_value < target and new_stars == old_stars:
+                progress = f"{old_value} → {new_value}/{target}"
                 changes.append(
-                    f"🎉 Achievement completed|**{ach_name}** ({new_stars}⭐)\n{old_value} → {new_value}/{target}"
+                    f"🎉 Achievement completed|**{ach_name}** ({new_stars}⭐)\n{progress}"
                 )
             # Achievement progress (value increased, but not completed or upgraded)
             if (
@@ -1812,8 +1816,9 @@ class ClashProfile(commands.Cog):
                 and (new_value < target or new_stars == old_stars)
                 and new_stars == old_stars
             ):
+                progress = f"{old_value} → {new_value}/{target}"
                 changes.append(
-                    f"⏳ Achievement progress|**{ach_name}**\n{old_value} → {new_value}/{target}"
+                    f"⏳ Achievement progress|**{ach_name}**\n{progress}"
                 )
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
