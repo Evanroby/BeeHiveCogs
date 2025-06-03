@@ -1895,7 +1895,7 @@ class ClashProfile(commands.Cog):
                 for line in change.split("\n"):
                     if "|" in line:
                         title, value = line.split("|", 1)
-                        embed.add_field(name=title.strip(), value=value.strip(), inline=True)
+                        embed.add_field(name=title.strip(), value=f"-# {value.strip()}", inline=True)
             else:
                 # fallback: add as a generic field
                 embed.add_field(name="Change", value=change, inline=False)
