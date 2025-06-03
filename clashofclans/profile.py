@@ -1679,7 +1679,7 @@ class ClashProfile(commands.Cog):
             new_stars = new_ach.get("stars", 0)
             if new_stars > old_stars:
                 changes.append(
-                    f"*### 🎖️ Achievement upgraded\n*{ach_name}*\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
+                    f"### 🎖️ Achievement upgraded\n*{ach_name}*\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
                 )
             # If value increased and target reached (achievement completed at this level)
             old_value = old_ach.get("value", 0)
