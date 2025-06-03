@@ -1484,7 +1484,9 @@ class ClashProfile(commands.Cog):
                 if not log_channel:
                     continue
 
-                # For each member in the guild
+                # Build a mapping of user_tag -> member for all linked, verified users in this guild
+                tag_to_member = {}
+                member_profiles = {}
                 for member in guild.members:
                     if member.bot:
                         continue
@@ -1492,21 +1494,35 @@ class ClashProfile(commands.Cog):
                     verified = await self.config.user(member).verified()
                     if not user_tag or not verified:
                         continue
+                    tag_to_member[user_tag.upper()] = member
+                    # Preload last profile for donation correlation
+                    last_profile = await self.config.user(member).last_profile()
+                    member_profiles[user_tag.upper()] = {
+                        "member": member,
+                        "last_profile": last_profile,
+                        "current_profile": None,  # will be filled after fetch
+                    }
 
-                    # Fetch player data
+                # Fetch current player data for all linked users
+                for user_tag, info in member_profiles.items():
                     player = await self.fetch_player_data(user_tag, dev_api_key)
                     if not player:
                         continue
-
                     # Check if player is in the correct clan
                     player_clan = player.get("clan", {}).get("tag", "")
                     if not player_clan or player_clan.upper() != clan_tag.upper():
                         continue
+                    info["current_profile"] = player
+
+                # Now process each member for role sync and logging
+                for user_tag, info in member_profiles.items():
+                    member = info["member"]
+                    player = info["current_profile"]
+                    if not player:
+                        continue
 
                     # --- ROLE ASSIGNMENT LOGIC ---
-                    # Only assign roles if the bot has permissions and the roles are set
                     player_role = player.get("role", "").lower()
-                    # Map coc role to config key
                     role_map = {
                         "member": "member",
                         "admin": "elder",
@@ -1514,53 +1530,42 @@ class ClashProfile(commands.Cog):
                         "leader": "leader"
                     }
                     role_key = role_map.get(player_role, None)
-                    # Build a set of all possible role IDs
                     all_role_ids = set(filter(None, [
                         roles_cfg.get("member"),
                         roles_cfg.get("elder"),
                         roles_cfg.get("coleader"),
                         roles_cfg.get("leader"),
                     ]))
-                    # Determine the correct role object to assign (if any)
                     correct_role_obj = None
                     if role_key and roles_cfg.get(role_key):
                         correct_role_obj = guild.get_role(roles_cfg[role_key])
 
-                    # Only remove roles that are CoC roles and not the correct one
                     roles_to_remove = []
                     for rid in all_role_ids:
                         role_obj = guild.get_role(rid)
                         if role_obj and role_obj in member.roles:
                             if correct_role_obj is None or role_obj.id != correct_role_obj.id:
                                 roles_to_remove.append(role_obj)
-                    # Remove only roles that are not the correct one
                     for r in roles_to_remove:
                         try:
                             await member.remove_roles(r, reason="Clash of Clans role sync")
                         except Exception:
                             pass
-                    # Add the correct role if not present
                     if correct_role_obj and correct_role_obj not in member.roles:
                         try:
                             await member.add_roles(correct_role_obj, reason="Clash of Clans role sync")
                         except Exception:
                             pass
 
-                    # Get last profile snapshot
-                    last_profile = await self.config.user(member).last_profile()
-                    # Compare and log changes, including role promotions/demotions
-                    changes = self._detect_profile_changes(last_profile, player)
+                    last_profile = info["last_profile"]
+                    changes = self._detect_profile_changes(last_profile, player, member_profiles)
                     # --- Role promotion/demotion logging ---
                     if last_profile is not None:
                         old_role = (last_profile.get("role") or "").lower()
                         new_role = (player.get("role") or "").lower()
-                        # Only log if changed and both are valid
                         if old_role != new_role and old_role in role_map and new_role in role_map:
-                            # For display, use CoC role names (capitalize)
                             old_disp = old_role.capitalize()
                             new_disp = new_role.capitalize()
-                            # Determine direction
-                            # Define a hierarchy for comparison
                             role_hierarchy = ["member", "admin", "coleader", "leader"]
                             try:
                                 old_idx = role_hierarchy.index(old_role)
@@ -1570,10 +1575,8 @@ class ClashProfile(commands.Cog):
                                 elif new_idx < old_idx:
                                     changes.insert(0, f"### ⬇️ Was demoted\n-# **{old_disp}** → **{new_disp}**")
                                 else:
-                                    # Should not happen, but fallback
                                     changes.insert(0, f"### 🔄 Role changed\n-# **{old_disp}** → **{new_disp}**")
                             except Exception:
-                                # If for some reason the role is not in the hierarchy, just log the change
                                 changes.insert(0, f"### 🔄 Role changed**\n-# **{old_disp}** → **{new_disp}**")
 
                     if changes:
@@ -1582,18 +1585,18 @@ class ClashProfile(commands.Cog):
                             await log_channel.send(embed=embed)
                         except Exception:
                             pass
-                        # Update last_profile
                         await self.config.user(member).last_profile.set(player)
                     elif last_profile is None:
-                        # First time, just store snapshot
                         await self.config.user(member).last_profile.set(player)
-                    # Add a small delay between API calls to avoid rate limiting
                     await asyncio.sleep(1.2)
             except Exception:
                 continue
 
-    def _detect_profile_changes(self, old, new):
-        """Return a list of change strings if anything interesting changed, including achievements, spells, troops, hero equipment, and heroes."""
+    def _detect_profile_changes(self, old, new, member_profiles=None):
+        """
+        Return a list of change strings if anything interesting changed, including achievements, spells, troops, hero equipment, and heroes.
+        If member_profiles is provided, attempt to correlate troop donations to other linked users.
+        """
         if not old:
             return []
         changes = []
@@ -1628,12 +1631,76 @@ class ClashProfile(commands.Cog):
         if old.get("donations") != new.get("donations"):
             diff = (new.get("donations") or 0) - (old.get("donations") or 0)
             if diff > 0:
-                changes.append(f"### 📤 Donated {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donations')} donations sent this season**")
+                # Try to correlate which linked user received the donations
+                donation_details = ""
+                if member_profiles is not None:
+                    # For each other member, see if their donationsReceived increased by a matching amount
+                    # Build a list of (member, diff) for those who received troops
+                    receivers = []
+                    for tag, info in member_profiles.items():
+                        if not info["last_profile"] or not info["current_profile"]:
+                            continue
+                        if info["current_profile"].get("tag", "").upper() == new.get("tag", "").upper():
+                            continue  # skip self
+                        old_recv = info["last_profile"].get("donationsReceived", 0)
+                        new_recv = info["current_profile"].get("donationsReceived", 0)
+                        recv_diff = (new_recv or 0) - (old_recv or 0)
+                        if recv_diff > 0:
+                            receivers.append((info["member"], recv_diff))
+                    # Try to match the total diff
+                    total_received = sum(r[1] for r in receivers)
+                    if receivers and total_received > 0:
+                        # If the total received matches the donation diff, show the breakdown
+                        if total_received == diff:
+                            donation_details = "\n".join(
+                                f"-# Sent **{recv_diff}** troop{'s' if recv_diff > 1 else ''} to {receiver.mention}"
+                                for receiver, recv_diff in receivers
+                            )
+                        else:
+                            # If not all donations can be matched, show partial info
+                            donation_details = "\n".join(
+                                f"-# At least **{recv_diff}** troop{'s' if recv_diff > 1 else ''} sent to {receiver.mention}"
+                                for receiver, recv_diff in receivers
+                            )
+                            donation_details += f"\n-# (Could not determine all recipients, total sent: {diff})"
+                if not donation_details:
+                    donation_details = f"-# **{new.get('donations')} donations sent this season**"
+                changes.append(f"### 📤 Donated {diff} troop{'s' if diff > 1 else ''}\n{donation_details}")
         # Donations received
         if old.get("donationsReceived") != new.get("donationsReceived"):
             diff = (new.get("donationsReceived") or 0) - (old.get("donationsReceived") or 0)
             if diff > 0:
-                changes.append(f"### 📥 Received {diff} troop{'s' if diff > 1 else ''}\n-# **{new.get('donationsReceived')} donations received this season**")
+                # Try to correlate which linked user sent the troops
+                received_details = ""
+                if member_profiles is not None:
+                    # For each other member, see if their donations increased by a matching amount
+                    senders = []
+                    for tag, info in member_profiles.items():
+                        if not info["last_profile"] or not info["current_profile"]:
+                            continue
+                        if info["current_profile"].get("tag", "").upper() == new.get("tag", "").upper():
+                            continue  # skip self
+                        old_sent = info["last_profile"].get("donations", 0)
+                        new_sent = info["current_profile"].get("donations", 0)
+                        sent_diff = (new_sent or 0) - (old_sent or 0)
+                        if sent_diff > 0:
+                            senders.append((info["member"], sent_diff))
+                    total_sent = sum(s[1] for s in senders)
+                    if senders and total_sent > 0:
+                        if total_sent == diff:
+                            received_details = "\n".join(
+                                f"-# Received **{sent_diff}** troop{'s' if sent_diff > 1 else ''} from {sender.mention}"
+                                for sender, sent_diff in senders
+                            )
+                        else:
+                            received_details = "\n".join(
+                                f"-# At least **{sent_diff}** troop{'s' if sent_diff > 1 else ''} from {sender.mention}"
+                                for sender, sent_diff in senders
+                            )
+                            received_details += f"\n-# (Could not determine all senders, total received: {diff})"
+                if not received_details:
+                    received_details = f"-# **{new.get('donationsReceived')} donations received this season**"
+                changes.append(f"### 📥 Received {diff} troop{'s' if diff > 1 else ''}\n{received_details}")
         # War stars
         if old.get("warStars") != new.get("warStars"):
             diff = (new.get("warStars") or 0) - (old.get("warStars") or 0)
@@ -1657,50 +1724,41 @@ class ClashProfile(commands.Cog):
         if old.get("warPreference") != new.get("warPreference"):
             old_pref = old.get("warPreference")
             new_pref = new.get("warPreference")
-            # The API returns "in" or "out"
             pref_map = {"in": "Participating", "out": "Not participating"}
             old_disp = pref_map.get(old_pref, old_pref or "Unknown")
             new_disp = pref_map.get(new_pref, new_pref or "Unknown")
             changes.append(f"### ⚔️ Clan War election changed\n-# **{old_disp} → {new_disp}**")
 
         # --- Achievement completion/upgrade events ---
-        # Only if both old and new have achievements
         old_achs = {a["name"]: a for a in old.get("achievements", []) if "name" in a}
         new_achs = {a["name"]: a for a in new.get("achievements", []) if "name" in a}
         for ach_name, new_ach in new_achs.items():
             old_ach = old_achs.get(ach_name)
             if not old_ach:
-                # New achievement appeared (shouldn't happen, but just in case)
                 if new_ach.get("stars", 0) > 0:
                     changes.append(f"### 🎖️ New achievement unlocked\n*{ach_name}*\n-# {new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}")
                 continue
-            # If stars increased (achievement upgraded)
             old_stars = old_ach.get("stars", 0)
             new_stars = new_ach.get("stars", 0)
             if new_stars > old_stars:
                 changes.append(
                     f"### 🎖️ Achievement upgraded\n*{ach_name}*\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
                 )
-            # If value increased and target reached (achievement completed at this level)
             old_value = old_ach.get("value", 0)
             new_value = new_ach.get("value", 0)
             target = new_ach.get("target", 0)
             if new_value >= target and old_value < target and new_stars == old_stars:
-                # Completed this achievement level (but not upgraded yet)
                 changes.append(
                     f"### 🎉 Achievement completed\n*{ach_name}* ({new_stars}⭐)\n-# {old_value} → {new_value}/{target}"
                 )
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
-        # Helper for logging upgrades
         def log_upgrade(old_list, new_list, key_name, emoji):
-            # extra_fields: list of (field, display_name) to show in log
             old_map = {item["name"]: item for item in old_list if "name" in item}
             new_map = {item["name"]: item for item in new_list if "name" in item}
             for name, new_item in new_map.items():
                 old_item = old_map.get(name)
                 if not old_item:
-                    # New spell/troop/hero/equipment appeared
                     continue
                 old_level = old_item.get("level", 0)
                 new_level = new_item.get("level", 0)
@@ -1708,29 +1766,24 @@ class ClashProfile(commands.Cog):
                     msg = f"### {emoji} {key_name} upgraded\n*{name}*\n-# **{old_level} → {new_level}**"
                     changes.append(msg)
 
-        # Spells
         log_upgrade(
             old.get("spells", []),
             new.get("spells", []),
             "Spell",
             "🧪"
         )
-        # Troops
         log_upgrade(
             old.get("troops", []),
             new.get("troops", []),
             "Troop",
             "⚔️"
         )
-        # Heroes
         log_upgrade(
             old.get("heroes", []),
             new.get("heroes", []),
             "Hero",
             "🦸"
         )
-        # Hero Equipment (if present)
-        # Some players may not have this field
         log_upgrade(
             old.get("heroEquipment", []),
             new.get("heroEquipment", []),
