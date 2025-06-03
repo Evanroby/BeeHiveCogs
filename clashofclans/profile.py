@@ -220,7 +220,7 @@ class ClashProfile(commands.Cog):
             if user:
                 await ctx.send(f"{user.mention} has not linked and verified their Clash of Clans account.")
             else:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash player link` first.")
             return
 
         player = await self.fetch_player_data(user_tag, dev_api_key)
@@ -412,7 +412,7 @@ class ClashProfile(commands.Cog):
             if user:
                 await ctx.send(f"{user.mention} has not linked and verified their Clash of Clans account.")
             else:
-                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash profile link` first.")
+                await ctx.send("You have not linked and verified your Clash of Clans account. Use `clash player link` first.")
             return
 
         player = await self.fetch_player_data(user_tag, dev_api_key)
@@ -717,12 +717,12 @@ class ClashProfile(commands.Cog):
             f"Leader: {get_role_mention(roles_cfg.get('leader'))}"
         )
 
-    @clash.group(name="profile")
-    async def clash_profile(self, ctx):
+    @clash.group(name="player")
+    async def clash_player(self, ctx):
         """Profiles and user management"""
 
-    @clash_profile.command(name="link")
-    async def clash_profile_link(self, ctx, tag: str, apikey: str):
+    @clash_player.command(name="link")
+    async def clash_player_link(self, ctx, tag: str, apikey: str):
         """
         Link your Clash of Clans account
         
@@ -751,8 +751,8 @@ class ClashProfile(commands.Cog):
             await self.config.user(ctx.author).verified.set(False)
             await ctx.send("❌ Verification failed. Please ensure your tag and API key are correct and try again. Remember, the API key is a one-time use token from the in-game settings.")
 
-    @clash_profile.command(name="info")
-    async def clash_profile_info(self, ctx, user: discord.User = None):
+    @clash_player.command(name="info")
+    async def clash_player_info(self, ctx, user: discord.User = None):
         """Check player information"""
 
         dev_api_key = await self.get_dev_api_key()
@@ -1059,8 +1059,8 @@ class ClashProfile(commands.Cog):
             embed.set_thumbnail(url=thumbnail_url)
         await ctx.send(embed=embed)
 
-    @clash_profile.command(name="achievements")
-    async def clash_profile_achievements(self, ctx, user: discord.User = None):
+    @clash_player.command(name="achievements")
+    async def clash_player_achievements(self, ctx, user: discord.User = None):
         """Show player achievements"""
 
         dev_api_key = await self.get_dev_api_key()
@@ -1176,8 +1176,8 @@ class ClashProfile(commands.Cog):
                     pass
                 break
 
-    @clash_profile.command(name="troops")
-    async def clash_profile_troops(self, ctx, user: discord.User = None):
+    @clash_player.command(name="troops")
+    async def clash_player_troops(self, ctx, user: discord.User = None):
         """Show player troops"""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -1299,8 +1299,8 @@ class ClashProfile(commands.Cog):
                     pass
                 break
 
-    @clash_profile.command(name="heroes")
-    async def clash_profile_heroes(self, ctx, user: discord.User = None):
+    @clash_player.command(name="heroes")
+    async def clash_player_heroes(self, ctx, user: discord.User = None):
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -1406,8 +1406,8 @@ class ClashProfile(commands.Cog):
             )
             await ctx.send(embed=embed_unequipped)
 
-    @clash_profile.command(name="spells")
-    async def clash_profile_spells(self, ctx, user: discord.User = None):
+    @clash_player.command(name="spells")
+    async def clash_player_spells(self, ctx, user: discord.User = None):
         """Show player spells"""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
