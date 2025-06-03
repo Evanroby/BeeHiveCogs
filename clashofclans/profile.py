@@ -1706,12 +1706,6 @@ class ClashProfile(commands.Cog):
                 new_level = new_item.get("level", 0)
                 if new_level > old_level:
                     msg = f"### {emoji} {key_name} upgraded\n*{name}*\n-# **{old_level} → {new_level}**"
-                    if extra_fields:
-                        for field, display in extra_fields:
-                            old_val = old_item.get(field)
-                            new_val = new_item.get(field)
-                            if old_val != new_val and new_val is not None:
-                                msg += f"\n-# **{display}: {old_val} → {new_val}**"
                     changes.append(msg)
 
         # Spells
