@@ -751,9 +751,9 @@ class ClashProfile(commands.Cog):
             await self.config.user(ctx.author).verified.set(False)
             await ctx.send("❌ Verification failed. Please ensure your tag and API key are correct and try again. Remember, the API key is a one-time use token from the in-game settings.")
 
-    @clash_player.command(name="info")
-    async def clash_player_info(self, ctx, user: discord.User = None):
-        """Check player information"""
+    @clash_player.command(name="about")
+    async def clash_player_about(self, ctx, user: discord.User = None):
+        """View player information"""
 
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -1061,7 +1061,7 @@ class ClashProfile(commands.Cog):
 
     @clash_player.command(name="achievements")
     async def clash_player_achievements(self, ctx, user: discord.User = None):
-        """Show player achievements"""
+        """View player achievements"""
 
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
@@ -1178,7 +1178,7 @@ class ClashProfile(commands.Cog):
 
     @clash_player.command(name="troops")
     async def clash_player_troops(self, ctx, user: discord.User = None):
-        """Show player troops"""
+        """View player troops and levels"""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -1235,17 +1235,15 @@ class ClashProfile(commands.Cog):
             end = start + PAGE_SIZE
             page_entries = troop_entries[start:end]
 
-            # Optionally, show the village as a prefix in the field name if there are multiple villages
-            show_village = len(troops_by_village) > 1
 
-            for village, troop in page_entries:
+            for troop in page_entries:
                 troop_name = troop.get("name", "Unknown")
                 troop_level = troop.get("level", 0)
                 troop_max = troop.get("maxLevel", 0)
                 value = f"-# Level {troop_level}/{troop_max}"
                 if len(value) > 1024:
                     value = value[:1021] + "..."
-                field_name = f"[{village}] {troop_name}" if show_village else troop_name
+                field_name = f"{troop_name}"
                 embed.add_field(
                     name=field_name,
                     value=value,
@@ -1304,7 +1302,7 @@ class ClashProfile(commands.Cog):
         """
         View player heroes and levels
         """
-        
+
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
@@ -1412,7 +1410,7 @@ class ClashProfile(commands.Cog):
 
     @clash_player.command(name="spells")
     async def clash_player_spells(self, ctx, user: discord.User = None):
-        """Show player spells"""
+        """View player spells and levels"""
         dev_api_key = await self.get_dev_api_key()
         if not dev_api_key:
             await ctx.send("Developer API key is not set up. Please contact the bot owner.")
