@@ -185,10 +185,83 @@ class ComplianceManager(commands.Cog):
             await log_channel.send(embed=embed)
 
     @commands.group(name="compliance", invoke_without_command=True)
-    @checks.is_owner()
     async def compliance(self, ctx):
-        """Compliance manager for guilds."""
-        await ctx.send_help()
+        """Compliance manager for guilds.
+
+        If you are not a bot owner, this will show your server's compliance status.
+        """
+        # Check if the user is a bot owner
+        is_owner = await self.bot.is_owner(ctx.author)
+        if is_owner:
+            await ctx.send_help()
+            return
+
+        # Not a bot owner: show this server's compliance status
+        guild = ctx.guild
+        if not guild:
+            await ctx.send("This command must be used in a server.")
+            return
+
+        enabled = await self.config.requirements_enabled()
+        allowed = await self.config.allowed_guilds()
+        blocked = await self.config.blocked_guilds()
+        blocked_reasons = await self.config.blocked_guild_reasons()
+        min_members = await self.config.min_member_count()
+        max_guilds = await self.config.max_guilds()
+
+        # Determine compliance status for this guild
+        guild_status = []
+        if guild.id in blocked:
+            reason = blocked_reasons.get(str(guild.id))
+            guild_status.append("❌ **Blocked**")
+            if reason:
+                guild_status.append(f"**Reason:** {reason}")
+        elif allowed and guild.id not in allowed:
+            guild_status.append("❌ **Not on allowlist**")
+        elif min_members and guild.member_count < min_members:
+            guild_status.append(f"❌ **Too few members** ({guild.member_count} < {min_members})")
+        elif enabled:
+            guild_status.append("✅ **Compliant**")
+        else:
+            guild_status.append("Compliance enforcement is currently **disabled**.")
+
+        embed = discord.Embed(
+            title=f"Compliance Status for {guild.name}",
+            color=discord.Color.blurple()
+        )
+        embed.add_field(
+            name="Status",
+            value="\n".join(guild_status),
+            inline=False
+        )
+        embed.add_field(
+            name="Compliance Enforcement",
+            value="Enabled" if enabled else "Disabled",
+            inline=True
+        )
+        embed.add_field(
+            name="Min Member Count",
+            value=f"{min_members}",
+            inline=True
+        )
+        embed.add_field(
+            name="Max Guilds",
+            value=f"{max_guilds}" if max_guilds else "Unlimited",
+            inline=True
+        )
+        if allowed:
+            embed.add_field(
+                name="Allowlist",
+                value="This server is on the allowlist." if guild.id in allowed else "This server is **not** on the allowlist.",
+                inline=False
+            )
+        if guild.id in blocked:
+            embed.add_field(
+                name="Blocklist",
+                value="This server is on the blocklist.",
+                inline=False
+            )
+        await ctx.send(embed=embed)
 
     @compliance.command(name="enable")
     @checks.is_owner()
