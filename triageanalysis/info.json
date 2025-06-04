@@ -1,0 +1,19 @@
+{
+  "author": [
+    "adminelevation"
+  ],
+  "install_msg": "Triage integration for malware analysis and autoscan. Use `[p]help triage` for commands.",
+  "name": "triageanalysis",
+  "short": "Triage malware analysis integration",
+  "description": "Integrate with tria.ge for malware analysis, autoscan, and moderation actions.",
+  "requirements": ["pyzipper"],
+  "tags": [
+    "malware",
+    "security",
+    "triage",
+    "analysis",
+    "moderation"
+  ],
+  "min_bot_version": "3.5.0",
+  "end_user_data_statement": "This cog may store sample IDs, scan results, and user actions for moderation and logging purposes. No personal data is shared with third parties."
+}
