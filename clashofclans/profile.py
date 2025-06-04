@@ -42,7 +42,7 @@ class ClashProfile(commands.Cog):
         self.config = Config.get_conf(self, identifier=1234567890, force_registration=True)
         default_user = {"tag": None, "verified": False, "last_profile": None}
         self.config.register_user(**default_user)
-        # Guild config: log_channel, clan_tag, role settings
+        # Guild config: log_channel, clan_tag, role settings, nickname sync
         default_guild = {
             "log_channel": None,
             "clan_tag": None,
@@ -51,7 +51,8 @@ class ClashProfile(commands.Cog):
                 "elder": None,
                 "coleader": None,
                 "leader": None
-            }
+            },
+            "nickname_sync": False  # Add nickname sync config
         }
         self.config.register_guild(**default_guild)
         self._log_task = self.bot.loop.create_task(self._log_loop())
@@ -157,6 +158,22 @@ class ClashProfile(commands.Cog):
             return
         await self.config.guild(ctx.guild).autokick.set(enable)
         await ctx.send(f"Autokick has been **{'enabled' if enable else 'disabled'}** for this server.")
+
+    @clash_clan.command(name="nicknamesync")
+    @commands.guild_only()
+    @checks.admin_or_permissions(manage_guild=True)
+    async def clash_clan_nicknamesync(self, ctx, enable: bool = None):
+        """
+        Enable or disable nickname sync for this server.
+
+        When enabled, users' Discord nicknames will be updated to match their in-game names.
+        """
+        if enable is None:
+            current = await self.config.guild(ctx.guild).nickname_sync()
+            await ctx.send(f"Nickname sync is currently **{'enabled' if current else 'disabled'}** for this server.")
+            return
+        await self.config.guild(ctx.guild).nickname_sync.set(enable)
+        await ctx.send(f"Nickname sync has been **{'enabled' if enable else 'disabled'}** for this server.")
 
     async def autokick_task(self):
         await self.bot.wait_until_ready()
@@ -1500,6 +1517,7 @@ class ClashProfile(commands.Cog):
                 log_channel_id = await self.config.guild(guild).log_channel()
                 clan_tag = await self.config.guild(guild).clan_tag()
                 roles_cfg = await self.config.guild(guild).roles()
+                nickname_sync = await self.config.guild(guild).nickname_sync()
                 if not log_channel_id or not clan_tag:
                     continue
                 log_channel = guild.get_channel(log_channel_id)
@@ -1536,7 +1554,7 @@ class ClashProfile(commands.Cog):
                         continue
                     info["current_profile"] = player
 
-                # Now process each member for role sync and logging
+                # Now process each member for role sync, nickname sync, and logging
                 for user_tag, info in member_profiles.items():
                     member = info["member"]
                     player = info["current_profile"]
@@ -1576,6 +1594,22 @@ class ClashProfile(commands.Cog):
                     if correct_role_obj and correct_role_obj not in member.roles:
                         try:
                             await member.add_roles(correct_role_obj, reason="Clash of Clans role sync")
+                        except Exception:
+                            pass
+
+                    # --- NICKNAME SYNC LOGIC ---
+                    if nickname_sync:
+                        try:
+                            coc_name = player.get("name", None)
+                            if coc_name:
+                                # Only change if different and bot has permission
+                                # Discord max nickname length is 32
+                                new_nick = coc_name[:32]
+                                # Only change if different
+                                if member.nick != new_nick:
+                                    # Don't try to change if member is the guild owner
+                                    if member != guild.owner:
+                                        await member.edit(nick=new_nick, reason="Clash of Clans nickname sync")
                         except Exception:
                             pass
 
