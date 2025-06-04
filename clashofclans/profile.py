@@ -159,21 +159,22 @@ class ClashProfile(commands.Cog):
         await self.config.guild(ctx.guild).autokick.set(enable)
         await ctx.send(f"Autokick has been **{'enabled' if enable else 'disabled'}** for this server.")
 
-    @clash_clan.command(name="nicknamesync")
+    @clash_clan.command(name="namesync")
     @commands.guild_only()
     @checks.admin_or_permissions(manage_guild=True)
-    async def clash_clan_nicknamesync(self, ctx, enable: bool = None):
+    async def clash_clan_namesync(self, ctx):
         """
-        Enable or disable nickname sync for this server.
+        Toggle nickname sync for this server.
 
         When enabled, users' Discord nicknames will be updated to match their in-game names.
+        Running this command will toggle the current state.
         """
-        if enable is None:
-            current = await self.config.guild(ctx.guild).nickname_sync()
-            await ctx.send(f"Nickname sync is currently **{'enabled' if current else 'disabled'}** for this server.")
-            return
-        await self.config.guild(ctx.guild).nickname_sync.set(enable)
-        await ctx.send(f"Nickname sync has been **{'enabled' if enable else 'disabled'}** for this server.")
+        current = await self.config.guild(ctx.guild).nickname_sync()
+        new_state = not current
+        await self.config.guild(ctx.guild).nickname_sync.set(new_state)
+        await ctx.send(
+            f"Nickname sync has been **{'enabled' if new_state else 'disabled'}** for this server."
+        )
 
     async def autokick_task(self):
         await self.bot.wait_until_ready()
