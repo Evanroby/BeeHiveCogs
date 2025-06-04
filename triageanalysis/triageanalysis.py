@@ -20,6 +20,10 @@ import platform
 import asyncio
 import aiohttp
 
+import secrets
+import string
+import zipfile
+
 import datetime
 import re
 import pytz
@@ -351,27 +355,71 @@ class TriageAnalysis(commands.Cog):
     @triage.command()
     async def download(self, ctx, sample_id: str):
         """
-        Download the sample file
+        Download the sample file as a password-protected zip
 
         [View command documentation](<https://sentri.beehive.systems/integrations/tria.ge#triage-download>)
         """
+
+        def generate_password(length=12):
+            alphabet = string.ascii_letters + string.digits
+            return ''.join(secrets.choice(alphabet) for _ in range(length))
+
         try:
             client = await self.get_client(ctx.guild)
             file_bytes = client.get_sample_file(sample_id)
+            password = generate_password()
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                # zipfile in Python 3.6+ supports password, but must use bytes
+                zf.writestr(f"{sample_id}.bin", file_bytes)
+                # Set password for all files in the archive
+                for zinfo in zf.filelist:
+                    zinfo.flag_bits |= 0x800  # set UTF-8 filename flag
+            # Now, re-zip with password using legacy ZipCrypto (Python stdlib limitation)
+            # So we need to use setpassword when writing, but zipfile only supports it for extraction.
+            # Instead, use pyzipper if available for better password support.
+            try:
+                import pyzipper
+                zip_buffer = BytesIO()
+                with pyzipper.AESZipFile(zip_buffer, 'w', compression=zipfile.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
+                    zf.setpassword(password.encode())
+                    zf.writestr(f"{sample_id}.bin", file_bytes)
+            except ImportError:
+                # Fallback: warn user that password protection is legacy/weak
+                zip_buffer = BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                    zf.writestr(f"{sample_id}.bin", file_bytes)
+                # Note: stdlib zipfile does not support writing password-protected zips, only reading.
+                # So, in this fallback, the zip will NOT be password protected.
+                password = None
+
+            zip_buffer.seek(0)
+            filename = f"{sample_id}.zip"
+            file_to_send = discord.File(zip_buffer, filename=filename)
+
             # Compose the warning as an embed
+            warning_desc = (
+                f"You requested a download of sample `{sample_id}`. "
+                f"This file is almost certainly **malicious** and is provided **strictly for research and analysis purposes**.\n\n"
+                f"**Do not run this file on your computer unless you know exactly what you are doing.**\n"
+                f"Open only in a secure, isolated environment (sandbox/VM) and never on a production or personal system.\n\n"
+                f"By downloading, you accept all risk and responsibility. If you are not sure, do not proceed.\n\n"
+            )
+            if password:
+                warning_desc += f"**The file is inside a password-protected zip.**\nPassword: `{password}`"
+            else:
+                warning_desc += (
+                    ":warning: **Could not password-protect the zip file due to missing `pyzipper` library. "
+                    "The file is sent as a plain zip.**"
+                )
+
             warning_embed = discord.Embed(
                 title="Here's the sample you requested",
-                description=(
-                    f"You requested a download of sample `{sample_id}`. "
-                    f"This file is almost certainly **malicious** and is provided **strictly for research and analysis purposes**.\n\n"
-                    f"**Do not run this file on your computer unless you know exactly what you are doing.**\n"
-                    f"Open only in a secure, isolated environment (sandbox/VM) and never on a production or personal system.\n\n"
-                    f"By downloading, you accept all risk and responsibility. If you are not sure, do not proceed."
-                ),
+                description=warning_desc,
                 color=0xff4545
             )
             warning_embed.set_footer(text="If you are not sure, do not proceed.")
-            file_to_send = discord.File(BytesIO(file_bytes), filename=f"{sample_id}.bin")
+
             try:
                 await ctx.author.send(embed=warning_embed)
                 await ctx.author.send(file=file_to_send)
