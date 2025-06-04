@@ -1753,6 +1753,9 @@ class ClashProfile(commands.Cog):
                             received_details += f"\nOther Senders|Could not determine all senders, total received: {diff}"
                 if not received_details:
                     received_details = f"Total donations received|**{new.get('donationsReceived')} donations received this season**"
+                # Always use \n as a divider for received_details if it contains a pipe but not a newline
+                if "|" in received_details and "\n" not in received_details:
+                    received_details = received_details.replace("|", "\n", 1)
                 changes.append(f"📥 Received {diff} troop{'s' if diff > 1 else ''}|{received_details}")
         # War stars
         if old.get("warStars") != new.get("warStars"):
@@ -1900,6 +1903,9 @@ class ClashProfile(commands.Cog):
                 for line in change.split("\n"):
                     if "|" in line:
                         title, value = line.split("|", 1)
+                        # If the value itself still contains a pipe and no newline, replace the first pipe with a newline
+                        if "|" in value and "\n" not in value:
+                            value = value.replace("|", "\n", 1)
                         embed.add_field(name=title.strip(), value=f"-# {value.strip()}", inline=True)
             else:
                 # fallback: add as a generic field
