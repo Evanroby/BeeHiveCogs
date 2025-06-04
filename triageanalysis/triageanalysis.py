@@ -423,7 +423,11 @@ class TriageAnalysis(commands.Cog):
             try:
                 await ctx.author.send(embed=warning_embed)
                 await ctx.author.send(file=file_to_send)
-                await ctx.send(f":mailbox_with_mail: Check your DMs for the sample and warning, {ctx.author.mention}.")
+                embed = discord.Embed(
+                    description=f":mailbox_with_mail: Check your DMs {ctx.author.mention}.",
+                    color=discord.Color.green()
+                )
+                await ctx.send(embed=embed)
             except discord.Forbidden:
                 await ctx.send(
                     f":warning: I couldn't send you a DM, {ctx.author.mention}. Please enable DMs from server members and try again."
