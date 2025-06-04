@@ -358,38 +358,24 @@ class TriageAnalysis(commands.Cog):
         try:
             client = await self.get_client(ctx.guild)
             file_bytes = client.get_sample_file(sample_id)
-            # Upload to tmpfiles.org
-            tmpfiles_url = None
-            async with aiohttp.ClientSession() as session:
-                data = aiohttp.FormData()
-                data.add_field('file', BytesIO(file_bytes), filename=f"{sample_id}.bin")
-                async with session.post("https://tmpfiles.org/api/v1/upload", data=data) as resp:
-                    if resp.status == 200:
-                        resp_json = await resp.json()
-                        tmpfiles_url = resp_json.get("data", {}).get("url")
-                        if not tmpfiles_url:
-                            raise RuntimeError("Failed to get download URL from tmpfiles.org response")
-                    else:
-                        raise RuntimeError(f"Failed to upload to tmpfiles.org (status {resp.status})")
-            if not tmpfiles_url or not tmpfiles_url.startswith("https://tmpfiles.org/"):
-                raise RuntimeError("Failed to upload file to tmpfiles.org")
             # Compose the warning as an embed
             warning_embed = discord.Embed(
                 title="Here's the sample you requested",
                 description=(
-                    f"You requested a download link for sample `{sample_id}`. "
+                    f"You requested a download of sample `{sample_id}`. "
                     f"This file is almost certainly **malicious** and is provided **strictly for research and analysis purposes**.\n\n"
                     f"**Do not run this file on your computer unless you know exactly what you are doing.**\n"
                     f"Open only in a secure, isolated environment (sandbox/VM) and never on a production or personal system.\n\n"
-                    f"**[Download sample]({tmpfiles_url})**\n\n"
                     f"By downloading, you accept all risk and responsibility. If you are not sure, do not proceed."
                 ),
                 color=0xff4545
             )
             warning_embed.set_footer(text="If you are not sure, do not proceed.")
+            file_to_send = discord.File(BytesIO(file_bytes), filename=f"{sample_id}.bin")
             try:
                 await ctx.author.send(embed=warning_embed)
-                await ctx.send(f":mailbox_with_mail: Check your DMs for the download link and warning, {ctx.author.mention}.")
+                await ctx.author.send(file=file_to_send)
+                await ctx.send(f":mailbox_with_mail: Check your DMs for the sample and warning, {ctx.author.mention}.")
             except discord.Forbidden:
                 await ctx.send(
                     f":warning: I couldn't send you a DM, {ctx.author.mention}. Please enable DMs from server members and try again."
