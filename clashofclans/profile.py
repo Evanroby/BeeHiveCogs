@@ -1675,7 +1675,7 @@ class ClashProfile(commands.Cog):
                         # If the total received matches the donation diff, show the breakdown
                         if total_received == diff:
                             donation_details = "\n".join(
-                                f"Sent to {receiver.display_name}|**{recv_diff} troop{'s' if recv_diff > 1 else ''}**"
+                                f"**Sent to {receiver.display_name}**|**{recv_diff} troop{'s' if recv_diff > 1 else ''}**"
                                 for receiver, recv_diff in receivers
                             )
                         else:
