@@ -1505,7 +1505,7 @@ class ClashProfile(commands.Cog):
             except Exception as e:
                 # You may want to log this exception
                 pass
-            await asyncio.sleep(300)  # 7 minutes
+            await asyncio.sleep(420)  # 7 minutes
 
     async def _check_and_log_updates(self):
         dev_api_key = await self.get_dev_api_key()
@@ -1518,7 +1518,6 @@ class ClashProfile(commands.Cog):
                 log_channel_id = await self.config.guild(guild).log_channel()
                 clan_tag = await self.config.guild(guild).clan_tag()
                 roles_cfg = await self.config.guild(guild).roles()
-                nickname_sync = await self.config.guild(guild).nickname_sync()
                 if not log_channel_id or not clan_tag:
                     continue
                 log_channel = guild.get_channel(log_channel_id)
@@ -1555,7 +1554,7 @@ class ClashProfile(commands.Cog):
                         continue
                     info["current_profile"] = player
 
-                # Now process each member for role sync, nickname sync, and logging
+                # Now process each member for role sync and logging
                 for user_tag, info in member_profiles.items():
                     member = info["member"]
                     player = info["current_profile"]
@@ -1595,22 +1594,6 @@ class ClashProfile(commands.Cog):
                     if correct_role_obj and correct_role_obj not in member.roles:
                         try:
                             await member.add_roles(correct_role_obj, reason="Clash of Clans role sync")
-                        except Exception:
-                            pass
-
-                    # --- NICKNAME SYNC LOGIC ---
-                    if nickname_sync:
-                        try:
-                            coc_name = player.get("name", None)
-                            if coc_name:
-                                # Only change if different and bot has permission
-                                # Discord max nickname length is 32
-                                new_nick = coc_name[:32]
-                                # Only change if different
-                                if member.nick != new_nick:
-                                    # Don't try to change if member is the guild owner
-                                    if member != guild.owner:
-                                        await member.edit(nick=new_nick, reason="Clash of Clans nickname sync")
                         except Exception:
                             pass
 
@@ -1661,29 +1644,29 @@ class ClashProfile(commands.Cog):
         if old.get("attackWins") != new.get("attackWins"):
             diff = (new.get("attackWins") or 0) - (old.get("attackWins") or 0)
             if diff > 0:
-                changes.append(f"🏆 Won {diff} attack{'s' if diff > 1 else ''}|**{new.get('attackWins')} successful attacks this season**")
+                changes.append(f"### 🏆 Won {diff} attack{'s' if diff > 1 else ''}\n-# **{new.get('attackWins')} successful attacks this season**")
         # Defense wins
         if old.get("defenseWins") != new.get("defenseWins"):
             diff = (new.get("defenseWins") or 0) - (old.get("defenseWins") or 0)
             if diff > 0:
-                changes.append(f"🛡️ Won {diff} defense{'s' if diff > 1 else ''}|**{new.get('defenseWins')} successful defenses this season**")
+                changes.append(f"### 🛡️ Won {diff} defense{'s' if diff > 1 else ''}\n-# **{new.get('defenseWins')} successful defenses this season**")
         # League change
         old_league = old.get("league", {}).get("name") if old.get("league") else None
         new_league = new.get("league", {}).get("name") if new.get("league") else None
         if old_league != new_league:
             if old_league and new_league:
-                changes.append(f"🏅 Changed leagues|**{old_league} → {new_league}**")
+                changes.append(f"### 🏅 Changed leagues\n-# **{old_league} → {new_league}**")
             elif new_league:
-                changes.append(f"🏅 Entered league|**{new_league}**")
+                changes.append(f"### 🏅 Entered league\n-# **{new_league}**")
             elif old_league:
-                changes.append(f"🏅 Left league|**{old_league}**")
+                changes.append(f"### 🏅 Left league\n-# **{old_league}**")
         # Trophies
         if old.get("trophies") != new.get("trophies"):
             diff = (new.get("trophies") or 0) - (old.get("trophies") or 0)
             if diff > 0:
-                changes.append(f"📈 Gained {diff} trophies|**{new.get('trophies')} trophies now**")
+                changes.append(f"### 📈 Gained {diff} trophies\n-# **{new.get('trophies')} trophies now**")
             elif diff < 0:
-                changes.append(f"📉 Lost {abs(diff)} trophies|**{new.get('trophies')} trophies now**")
+                changes.append(f"### 📉 Lost {abs(diff)} trophies\n-# **{new.get('trophies')} trophies now**")
         # Donations
         if old.get("donations") != new.get("donations"):
             diff = (new.get("donations") or 0) - (old.get("donations") or 0)
@@ -1710,7 +1693,7 @@ class ClashProfile(commands.Cog):
                         # If the total received matches the donation diff, show the breakdown
                         if total_received == diff:
                             donation_details = "\n".join(
-                                f"**Sent to {receiver.display_name}**|**{recv_diff} troop{'s' if recv_diff > 1 else ''}**"
+                                f"-# Sent **{recv_diff}** troop{'s' if recv_diff > 1 else ''} to {receiver.mention}"
                                 for receiver, recv_diff in receivers
                             )
                         else:
@@ -1723,21 +1706,21 @@ class ClashProfile(commands.Cog):
                                     partial = diff - running_total
                                     if partial > 0:
                                         partial_lines.append(
-                                            f"At least sent to {receiver.display_name}|**{partial} troop{'s' if partial > 1 else ''}**"
+                                            f"-# At least **{partial}** troop{'s' if partial > 1 else ''} sent to {receiver.mention}"
                                         )
                                     break
                                 else:
                                     partial_lines.append(
-                                        f"At least sent to {receiver.display_name}|**{recv_diff} troop{'s' if recv_diff > 1 else ''}**"
+                                        f"-# At least **{recv_diff}** troop{'s' if recv_diff > 1 else ''} sent to {receiver.mention}"
                                     )
                                     running_total += recv_diff
                                     if running_total >= diff:
                                         break
                             donation_details = "\n".join(partial_lines)
-                            donation_details += f"\nOther Recipients|Could not determine all recipients, total sent: {diff}"
+                            donation_details += f"\n-# (Could not determine all recipients, total sent: {diff})"
                 if not donation_details:
-                    donation_details = f"Total donations sent|**{new.get('donations')} donations sent this season**"
-                changes.append(f"📤 Donated {diff} troop{'s' if diff > 1 else ''}|{donation_details}")
+                    donation_details = f"-# **{new.get('donations')} donations sent this season**"
+                changes.append(f"### 📤 Donated {diff} troop{'s' if diff > 1 else ''}\n{donation_details}")
         # Donations received
         if old.get("donationsReceived") != new.get("donationsReceived"):
             diff = (new.get("donationsReceived") or 0) - (old.get("donationsReceived") or 0)
@@ -1761,7 +1744,7 @@ class ClashProfile(commands.Cog):
                     if senders and total_sent > 0:
                         if total_sent == diff:
                             received_details = "\n".join(
-                                f"Received from {sender.display_name}|**{sent_diff} troop{'s' if sent_diff > 1 else ''}**"
+                                f"-# Received **{sent_diff}** troop{'s' if sent_diff > 1 else ''} from {sender.mention}"
                                 for sender, sent_diff in senders
                             )
                         else:
@@ -1774,43 +1757,40 @@ class ClashProfile(commands.Cog):
                                     partial = diff - running_total
                                     if partial > 0:
                                         partial_lines.append(
-                                            f"At least from {sender.display_name}|**{partial} troop{'s' if partial > 1 else ''}**"
+                                            f"-# At least **{partial}** troop{'s' if partial > 1 else ''} from {sender.mention}"
                                         )
                                     break
                                 else:
                                     partial_lines.append(
-                                        f"At least from {sender.display_name}|**{sent_diff} troop{'s' if sent_diff > 1 else ''}**"
+                                        f"-# At least **{sent_diff}** troop{'s' if sent_diff > 1 else ''} from {sender.mention}"
                                     )
                                     running_total += sent_diff
                                     if running_total >= diff:
                                         break
                             received_details = "\n".join(partial_lines)
-                            received_details += f"\nOther Senders|Could not determine all senders, total received: {diff}"
+                            received_details += f"\n-# (Could not determine all senders, total received: {diff})"
                 if not received_details:
-                    received_details = f"Total donations received|**{new.get('donationsReceived')} donations received this season**"
-                # Always use \n as a divider for received_details if it contains a pipe but not a newline
-                if "|" in received_details and "\n" not in received_details:
-                    received_details = received_details.replace("|", "\n", 1)
-                changes.append(f"📥 Received {diff} troop{'s' if diff > 1 else ''}|{received_details}")
+                    received_details = f"-# **{new.get('donationsReceived')} donations received this season**"
+                changes.append(f"### 📥 Received {diff} troop{'s' if diff > 1 else ''}\n{received_details}")
         # War stars
         if old.get("warStars") != new.get("warStars"):
             diff = (new.get("warStars") or 0) - (old.get("warStars") or 0)
             if diff > 0:
-                changes.append(f"⭐ Gained {diff} war star{'s' if diff > 1 else ''}|**{new.get('warStars')} war stars now**")
+                changes.append(f"### ⭐ Gained {diff} war star{'s' if diff > 1 else ''}\n-# **{new.get('warStars')} war stars now**")
         # Clan capital contributions
         if old.get("clanCapitalContributions") != new.get("clanCapitalContributions"):
             diff = (new.get("clanCapitalContributions") or 0) - (old.get("clanCapitalContributions") or 0)
             if diff > 0:
-                changes.append(f"🏛️ Contributed {diff} Capital Gold to clan|**{new.get('clanCapitalContributions')} Capital Gold donated this season**")
+                changes.append(f"### 🏛️ Contributed {diff} Capital Gold to clan\n-# **{new.get('clanCapitalContributions')} Capital Gold donated this season**")
         # Town Hall level
         if old.get("townHallLevel") != new.get("townHallLevel"):
-            changes.append(f"🏰 Town Hall upgraded|**{old.get('townHallLevel')}** → **{new.get('townHallLevel')}**")
+            changes.append(f"### 🏰 Town Hall upgraded\n-# **{old.get('townHallLevel')}** → **{new.get('townHallLevel')}**")
         # Builder Hall level
         if old.get("builderHallLevel") != new.get("builderHallLevel"):
-            changes.append(f"🏚️ Builder Hall upgraded|**{old.get('builderHallLevel')}** → **{new.get('builderHallLevel')}**")
+            changes.append(f"### 🏚️ Builder Hall upgraded\n-# **{old.get('builderHallLevel')}** → **{new.get('builderHallLevel')}**")
         # Name change
         if old.get("name") != new.get("name"):
-            changes.append(f"📝 Changed name|**{old.get('name')}** → **{new.get('name')}**")
+            changes.append(f"### 📝 Changed name\n-# **{old.get('name')}** → **{new.get('name')}**")
         # War Preference (opted in/out of Clan Wars)
         if old.get("warPreference") != new.get("warPreference"):
             old_pref = old.get("warPreference")
@@ -1818,7 +1798,7 @@ class ClashProfile(commands.Cog):
             pref_map = {"in": "Participating", "out": "Not participating"}
             old_disp = pref_map.get(old_pref, old_pref or "Unknown")
             new_disp = pref_map.get(new_pref, new_pref or "Unknown")
-            changes.append(f"⚔️ Clan War election changed|**{old_disp} → {new_disp}**")
+            changes.append(f"### ⚔️ Clan War election changed\n-# **{old_disp} → {new_disp}**")
 
         # --- Achievement completion/upgrade/progress events ---
         old_achs = {a["name"]: a for a in old.get("achievements", []) if "name" in a}
@@ -1827,9 +1807,7 @@ class ClashProfile(commands.Cog):
             old_ach = old_achs.get(ach_name)
             if not old_ach:
                 if new_ach.get("stars", 0) > 0:
-                    # Show progress in the value
-                    progress = f"{new_ach.get('value', 0)}/{new_ach.get('target', 0)}"
-                    changes.append(f"🎖️ New achievement unlocked|**{ach_name}**\n**{new_ach.get('stars', 0)}⭐ {progress}**")
+                    changes.append(f"### 🎖️ New achievement unlocked\n**{ach_name}**\n-# **{new_ach.get('stars', 0)}⭐ {new_ach.get('value', 0)}/{new_ach.get('target', 0)}**")
                 continue
             old_stars = old_ach.get("stars", 0)
             new_stars = new_ach.get("stars", 0)
@@ -1838,15 +1816,13 @@ class ClashProfile(commands.Cog):
             target = new_ach.get("target", 0)
             # Achievement upgraded (stars increased)
             if new_stars > old_stars:
-                progress = f"{new_ach.get('value', 0)}/{new_ach.get('target', 0)}"
                 changes.append(
-                    f"🎖️ Achievement upgraded|**{ach_name}**\nLv{old_stars} → Lv{new_stars}\n({progress})"
+                    f"### 🎖️ Achievement upgraded\n**{ach_name}**\n-# **Lv{old_stars} → Lv{new_stars}**\n-# **({new_ach.get('value', 0)}/{new_ach.get('target', 0)})**"
                 )
             # Achievement completed (value reached target, but stars did not increase)
             if new_value >= target and old_value < target and new_stars == old_stars:
-                progress = f"{old_value} → {new_value}/{target}"
                 changes.append(
-                    f"🎉 Achievement completed|**{ach_name}** ({new_stars}⭐)\n{progress}"
+                    f"### 🎉 Achievement completed\n**{ach_name}** ({new_stars}⭐)\n-# **{old_value} → {new_value}/{target}**"
                 )
             # Achievement progress (value increased, but not completed or upgraded)
             if (
@@ -1854,9 +1830,8 @@ class ClashProfile(commands.Cog):
                 and (new_value < target or new_stars == old_stars)
                 and new_stars == old_stars
             ):
-                progress = f"{old_value} → {new_value}/{target}"
                 changes.append(
-                    f"⏳ Achievement progress|**{ach_name}**\n{progress}"
+                    f"### ⏳ Achievement progress\n**{ach_name}**\n-# **{old_value} → {new_value}/{target}**"
                 )
 
         # --- Spells, Troops, Heroes, Hero Equipment upgrades ---
@@ -1870,7 +1845,7 @@ class ClashProfile(commands.Cog):
                 old_level = old_item.get("level", 0)
                 new_level = new_item.get("level", 0)
                 if new_level > old_level:
-                    msg = f"{emoji} {key_name} upgraded|**{name}**\n{old_level} → {new_level}"
+                    msg = f"### {emoji} {key_name} upgraded\n**{name}**\n-# **{old_level} → {new_level}**"
                     changes.append(msg)
 
         log_upgrade(
@@ -1919,7 +1894,9 @@ class ClashProfile(commands.Cog):
                 color = color_from_img
 
         tag_line = f"{player.get('tag', '')}"
+        description = "\n".join(changes)
         embed = discord.Embed(
+            description=description if description else None,
             color=color
         )
         embed.set_author(
@@ -1930,19 +1907,4 @@ class ClashProfile(commands.Cog):
         if tag_line.strip():
             footer_text = f"{tag_line} | {footer_text}"
         embed.set_footer(text=footer_text)
-
-        # Add each change as a field
-        for change in changes:
-            # If the change contains a pipe, treat as "title|value"
-            if "|" in change:
-                for line in change.split("\n"):
-                    if "|" in line:
-                        title, value = line.split("|", 1)
-                        # If the value itself still contains a pipe and no newline, replace the first pipe with a newline
-                        if "|" in value and "\n" not in value:
-                            value = value.replace("|", "\n", 1)
-                        embed.add_field(name=title.strip(), value=f"-# {value.strip()}", inline=True)
-            else:
-                # fallback: add as a generic field
-                embed.add_field(name="Change", value=change, inline=False)
         return embed
