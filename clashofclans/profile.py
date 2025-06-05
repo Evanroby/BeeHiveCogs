@@ -1825,10 +1825,12 @@ class ClashProfile(commands.Cog):
                     f"### 🎉 Achievement completed\n**{ach_name}** ({new_stars}⭐)\n-# **{old_value} → {new_value}/{target}**"
                 )
             # Achievement progress (value increased, but not completed or upgraded)
+            # Only show progress if the achievement is not already complete
             if (
                 new_value > old_value
                 and (new_value < target or new_stars == old_stars)
                 and new_stars == old_stars
+                and old_value < target
             ):
                 changes.append(
                     f"### ⏳ Achievement progress\n**{ach_name}**\n-# **{old_value} → {new_value}/{target}**"
