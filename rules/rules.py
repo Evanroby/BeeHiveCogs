@@ -1,6 +1,8 @@
-import discord
-from redbot.core import commands, Config
 import asyncio
+
+import discord
+from redbot.core import Config, commands
+
 
 class RulesCog(commands.Cog):
     def __init__(self, bot):
@@ -9,21 +11,24 @@ class RulesCog(commands.Cog):
         default_guild = {
             "acceptance_role_id": None,
             "rules_channel_id": None,
-            "acceptance_prompt_enabled": False
+            "acceptance_prompt_enabled": False,
         }
         self.config.register_guild(**default_guild)
 
-    @commands.group(name='rules', invoke_without_command=True)
+    @commands.group(name="rules", invoke_without_command=True)
+    @commands.guild_only()
     @commands.admin_or_permissions()
     async def rules_group(self, ctx):
         """Group command for managing server rules."""
         await ctx.send_help(ctx.command)
 
-    @rules_group.command(name='send')
+    @rules_group.command(name="send")
     async def send_rules(self, ctx):
         """Send the server rules to the configured rules channel or current channel."""
         rules_channel_id = await self.config.guild(ctx.guild).rules_channel_id()
-        channel = ctx.guild.get_channel(rules_channel_id) if rules_channel_id else ctx.channel
+        channel = (
+            ctx.guild.get_channel(rules_channel_id) if rules_channel_id else ctx.channel
+        )
 
         rules = [
             {
@@ -35,7 +40,7 @@ class RulesCog(commands.Cog):
                     "- Name-calling or using derogatory terms.\n"
                     "- Sending threatening messages.\n"
                     "- Mocking someone's personal attributes."
-                )
+                ),
             },
             {
                 "title": "Rule 2: No spamming or flooding the chat.",
@@ -45,7 +50,7 @@ class RulesCog(commands.Cog):
                     "- Posting the same message repeatedly in a short period.\n"
                     "- Using an excessive number of emojis in a single message.\n"
                     "- Sending large blocks of text that disrupt the conversation."
-                )
+                ),
             },
             {
                 "title": "Rule 3: No hate speech or offensive language.",
@@ -55,7 +60,7 @@ class RulesCog(commands.Cog):
                     "- Using racial slurs or derogatory language.\n"
                     "- Making sexist jokes or comments.\n"
                     "- Sharing homophobic or transphobic content."
-                )
+                ),
             },
             {
                 "title": "Rule 4: Keep conversations in the appropriate channels.",
@@ -65,7 +70,7 @@ class RulesCog(commands.Cog):
                     "- Posting memes in a serious discussion channel.\n"
                     "- Asking for tech support in a general chat.\n"
                     "- Discussing off-topic subjects in a focused channel."
-                )
+                ),
             },
             {
                 "title": "Rule 5: Follow the Discord Community Guidelines.",
@@ -76,7 +81,7 @@ class RulesCog(commands.Cog):
                     "- Sharing content that violates Discord's terms.\n"
                     "- Engaging in activities that Discord prohibits.\n"
                     "- Ignoring warnings about guideline violations."
-                )
+                ),
             },
             {
                 "title": "Rule 6: Listen to the moderators and admins.",
@@ -86,7 +91,7 @@ class RulesCog(commands.Cog):
                     "- Ignoring direct instructions from moderators.\n"
                     "- Arguing with staff decisions publicly.\n"
                     "- Disrespecting staff members in any form."
-                )
+                ),
             },
             {
                 "title": "Rule 7: Do not share dangerous or malicious content.",
@@ -96,7 +101,7 @@ class RulesCog(commands.Cog):
                     "- Posting links to suspicious websites.\n"
                     "- Sharing files that contain malware.\n"
                     "- Encouraging others to visit harmful sites."
-                )
+                ),
             },
             {
                 "title": "Rule 8: Do not share personal information.",
@@ -106,7 +111,7 @@ class RulesCog(commands.Cog):
                     "- Posting your or others' addresses or phone numbers.\n"
                     "- Sharing private conversations without consent.\n"
                     "- Revealing sensitive personal information."
-                )
+                ),
             },
             {
                 "title": "Rule 9: Use appropriate usernames and avatars.",
@@ -116,7 +121,7 @@ class RulesCog(commands.Cog):
                     "- Using explicit images as avatars.\n"
                     "- Choosing usernames with offensive language.\n"
                     "- Changing usernames to impersonate others."
-                )
+                ),
             },
             {
                 "title": "Rule 10: No self-promotion or advertising.",
@@ -126,7 +131,7 @@ class RulesCog(commands.Cog):
                     "- Posting links to your YouTube channel without approval.\n"
                     "- Advertising your business in chat.\n"
                     "- Inviting members to other servers without consent."
-                )
+                ),
             },
             {
                 "title": "Rule 11: No excessive shitposting.",
@@ -136,7 +141,7 @@ class RulesCog(commands.Cog):
                     "- Posting random memes repeatedly.\n"
                     "- Sharing irrelevant jokes in serious discussions.\n"
                     "- Flooding channels with low-effort content."
-                )
+                ),
             },
             {
                 "title": "Rule 12: Staff have the final decision for all moderative actions.",
@@ -146,7 +151,7 @@ class RulesCog(commands.Cog):
                     "- Publicly disputing a moderator's decision.\n"
                     "- Attempting to bypass a staff ruling.\n"
                     "- Encouraging others to challenge staff authority."
-                )
+                ),
             },
             {
                 "title": "Rule 13: No illegal activities.",
@@ -156,7 +161,7 @@ class RulesCog(commands.Cog):
                     "- Sharing pirated software or media.\n"
                     "- Discussing illegal drug use.\n"
                     "- Planning or promoting illegal activities."
-                )
+                ),
             },
             {
                 "title": "Rule 14: Respect privacy and confidentiality.",
@@ -166,35 +171,39 @@ class RulesCog(commands.Cog):
                     "- Leaking private messages or server information.\n"
                     "- Sharing screenshots of private conversations.\n"
                     "- Discussing confidential matters in public channels."
-                )
-            }
+                ),
+            },
         ]
 
         for rule in rules:
-            embed = discord.Embed(title=rule["title"], description=rule["description"], color=0xfffffe)
+            embed = discord.Embed(
+                title=rule["title"], description=rule["description"], color=0xFFFFFE
+            )
             await channel.send(embed=embed)
             await asyncio.sleep(2)
 
         # Check if acceptance prompt is enabled
-        acceptance_prompt_enabled = await self.config.guild(ctx.guild).acceptance_prompt_enabled()
+        acceptance_prompt_enabled = await self.config.guild(
+            ctx.guild
+        ).acceptance_prompt_enabled()
         if acceptance_prompt_enabled:
             await self.send_accept_message(ctx)
 
-    @rules_group.command(name='setacceptancerole')
+    @rules_group.command(name="setacceptancerole")
     @commands.has_permissions(manage_roles=True)
     async def set_acceptance_role(self, ctx, role: discord.Role):
         """Set the role to be given when a user accepts the rules."""
         await self.config.guild(ctx.guild).acceptance_role_id.set(role.id)
         await ctx.send(f"Acceptance role set to: {role.name}")
 
-    @rules_group.command(name='setruleschannel')
+    @rules_group.command(name="setruleschannel")
     @commands.has_permissions(manage_channels=True)
     async def set_rules_channel(self, ctx, channel: discord.TextChannel):
         """Set the channel where rules will be sent."""
         await self.config.guild(ctx.guild).rules_channel_id.set(channel.id)
         await ctx.send(f"Rules channel set to: {channel.mention}")
 
-    @rules_group.command(name='toggleacceptprompt')
+    @rules_group.command(name="toggleacceptprompt")
     @commands.has_permissions(administrator=True)
     async def toggle_acceptance_prompt(self, ctx):
         """Toggle the acceptance prompt on or off."""
@@ -208,12 +217,14 @@ class RulesCog(commands.Cog):
         """Send a message for users to accept the rules."""
         acceptance_role_id = await self.config.guild(ctx.guild).acceptance_role_id()
         if acceptance_role_id is None:
-            await ctx.send("Acceptance role not set. Use the setacceptancerole command first.")
+            await ctx.send(
+                "Acceptance role not set. Use the setacceptancerole command first."
+            )
             return
 
         embed = discord.Embed(
             description="By reacting, you indicate you've read and agree to the rules.",
-            color=0xfffffe
+            color=0xFFFFFE,
         )
         message = await ctx.send(embed=embed)
         await message.add_reaction("✅")
@@ -227,17 +238,22 @@ class RulesCog(commands.Cog):
 
         while True:
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=60.0)
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add", check=check, timeout=60.0
+                )
                 role = ctx.guild.get_role(acceptance_role_id)
                 if role:
                     try:
                         await user.add_roles(role)
                         try:
-                            await user.send("Thank you for accepting the rules. Please remember that failing to follow them will result in moderation.")
+                            await user.send(
+                                "Thank you for accepting the rules. Please remember that failing to follow them will result in moderation."
+                            )
                         except discord.Forbidden:
                             pass  # If we can't DM the user, just pass silently
                     except discord.Forbidden:
-                        await ctx.send(f"Failed to assign role to {user.mention}. Check bot permissions.")
+                        await ctx.send(
+                            f"Failed to assign role to {user.mention}. Check bot permissions."
+                        )
             except asyncio.TimeoutError:
                 break
-
